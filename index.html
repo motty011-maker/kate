@@ -4,11 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PromptPay Bill Splitter - หารค่าอาหารพร้อมเพย์</title>
+  <!-- Google Fonts: Sarabun -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- QRCode.js Library for EMVCo QR code generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
+    /* Set Sarabun as the primary font */
+    body, input, select, textarea, button {
+      font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
     /* Prevent iOS input zoom and styling enhancements */
     input, select, textarea, button {
       font-size: 16px;
@@ -25,7 +33,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-24 sm:pb-12 font-sans selection:bg-blue-100 selection:text-blue-800">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-24 sm:pb-12 selection:bg-blue-100 selection:text-blue-800">
 
   <!-- Header Bar -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
@@ -60,7 +68,7 @@
         </div>
         <button type="button" onclick="addNewBill()" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 font-semibold text-xs rounded-xl border border-blue-200 transition flex items-center gap-1">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span>+ เพิ่มร้าน / บิลใหม่</span>
+          <span> เพิ่มร้าน / บิลใหม่</span>
         </button>
       </div>
 
@@ -291,17 +299,38 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Service Charge & VAT Checkboxes -->
+        <!-- Service Charge & VAT Inputs -->
         <div class="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
           <span class="text-xs font-semibold text-slate-600 block">ภาษี & เซอร์วิสชาร์จ (Plus Plus)</span>
-          <label class="flex items-center gap-2.5 cursor-pointer text-sm font-medium text-slate-700">
-            <input type="checkbox" id="scCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
-            <span>Service Charge 10%</span>
-          </label>
-          <label class="flex items-center gap-2.5 cursor-pointer text-sm font-medium text-slate-700">
-            <input type="checkbox" id="vatCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
-            <span>VAT 7%</span>
-          </label>
+          
+          <!-- Service Charge Row -->
+          <div class="flex items-center justify-between gap-2">
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 select-none">
+              <input type="checkbox" id="scCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+              <span>Service Charge</span>
+            </label>
+            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-300 focus-within:ring-2 focus-within:ring-blue-500">
+              <input type="number" id="scRateInput" value="10" min="0" max="100" step="any" placeholder="10"
+                     oninput="onBillTaxDiscountChanged()" 
+                     class="w-12 text-xs font-mono text-right font-bold text-slate-800 focus:outline-none">
+              <span class="text-xs font-semibold text-slate-400">%</span>
+            </div>
+          </div>
+
+          <!-- VAT Row -->
+          <div class="flex items-center justify-between gap-2">
+            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 select-none">
+              <input type="checkbox" id="vatCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+              <span>VAT</span>
+            </label>
+            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-300 focus-within:ring-2 focus-within:ring-blue-500">
+              <input type="number" id="vatRateInput" value="7" min="0" max="100" step="any" placeholder="7"
+                     oninput="onBillTaxDiscountChanged()" 
+                     class="w-12 text-xs font-mono text-right font-bold text-slate-800 focus:outline-none">
+              <span class="text-xs font-semibold text-slate-400">%</span>
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-400">ติ๊กถูกเพื่อเปิดใช้งาน และสามารถเปลี่ยน % ได้ตามบิลจริง</p>
         </div>
 
         <!-- Discount Inputs with Switcher (% / ฿) -->
@@ -480,7 +509,9 @@
         qrMode: 'auto', // 'auto' | 'upload'
         customQrUrl: null,
         hasSC: false,
+        scRate: 10,
         hasVAT: false,
+        vatRate: 7,
         discountType: 'baht',
         discountVal: 0,
         dishes: []
@@ -556,7 +587,9 @@
         qrMode: 'auto',
         customQrUrl: null,
         hasSC: false,
+        scRate: 10,
         hasVAT: false,
+        vatRate: 7,
         discountType: 'baht',
         discountVal: 0,
         dishes: []
@@ -600,6 +633,8 @@
       document.getElementById('accountNoteInput').value = bill.accountNote || '';
       document.getElementById('scCheck').checked = !!bill.hasSC;
       document.getElementById('vatCheck').checked = !!bill.hasVAT;
+      document.getElementById('scRateInput').value = bill.scRate !== undefined ? bill.scRate : 10;
+      document.getElementById('vatRateInput').value = bill.vatRate !== undefined ? bill.vatRate : 7;
       document.getElementById('discountInput').value = bill.discountVal || '';
 
       setDiscountType(bill.discountType || 'baht', false);
@@ -929,6 +964,13 @@
       const bill = getActiveBill();
       bill.hasSC = document.getElementById('scCheck').checked;
       bill.hasVAT = document.getElementById('vatCheck').checked;
+      
+      const scVal = parseFloat(document.getElementById('scRateInput').value);
+      bill.scRate = isNaN(scVal) || scVal < 0 ? 10 : scVal;
+
+      const vatVal = parseFloat(document.getElementById('vatRateInput').value);
+      bill.vatRate = isNaN(vatVal) || vatVal < 0 ? 7 : vatVal;
+
       bill.discountVal = parseFloat(document.getElementById('discountInput').value) || 0;
       triggerAutoRecalculate();
     }
@@ -949,8 +991,11 @@
       }
 
       const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountVal);
-      const scAmount = bill.hasSC ? subtotalAfterDiscount * 0.10 : 0;
-      const vatAmount = bill.hasVAT ? (subtotalAfterDiscount + scAmount) * 0.07 : 0;
+      const scPercent = (bill.scRate !== undefined && !isNaN(bill.scRate)) ? bill.scRate : 10;
+      const vatPercent = (bill.vatRate !== undefined && !isNaN(bill.vatRate)) ? bill.vatRate : 7;
+
+      const scAmount = bill.hasSC ? subtotalAfterDiscount * (scPercent / 100) : 0;
+      const vatAmount = bill.hasVAT ? (subtotalAfterDiscount + scAmount) * (vatPercent / 100) : 0;
       const grandTotal = subtotalAfterDiscount + scAmount + vatAmount;
 
       const memberShares = {};
@@ -973,8 +1018,8 @@
         const ratio = rawSubtotal > 0 ? (rawShare / rawSubtotal) : 0;
         const myDiscount = discountVal * ratio;
         const myAfterDisc = Math.max(0, rawShare - myDiscount);
-        const mySC = bill.hasSC ? (myAfterDisc * 0.10) : 0;
-        const myVAT = bill.hasVAT ? ((myAfterDisc + mySC) * 0.07) : 0;
+        const mySC = bill.hasSC ? (myAfterDisc * (scPercent / 100)) : 0;
+        const myVAT = bill.hasVAT ? ((myAfterDisc + mySC) * (vatPercent / 100)) : 0;
         const myFinal = myAfterDisc + mySC + myVAT;
 
         memberFinals[f] = {
@@ -991,6 +1036,8 @@
         discountVal,
         scAmount,
         vatAmount,
+        scPercent,
+        vatPercent,
         grandTotal,
         memberFinals
       };
@@ -1316,6 +1363,12 @@
       calculatedGrandData.billCalculatedList.forEach(({ bill, calc }, idx) => {
         text += `🏪 ร้านที่ ${idx + 1}: ${bill.name}\n`;
         text += `• ยอดรวมร้านนี้: ${calc.grandTotal.toFixed(2)} บาท\n`;
+        if (bill.hasSC || bill.hasVAT) {
+          const taxes = [];
+          if (bill.hasSC) taxes.push(`SC ${calc.scPercent}%`);
+          if (bill.hasVAT) taxes.push(`VAT ${calc.vatPercent}%`);
+          text += `• ภาษี/บริการ: ${taxes.join(', ')}\n`;
+        }
         text += `• คนสำรองจ่าย: ${bill.payer || '-'}`;
         if (bill.promptpayId) text += ` (พร้อมเพย์: ${bill.promptpayId})`;
         text += `\n------------------------\n`;
@@ -1405,7 +1458,9 @@
           qrMode: 'auto',
           customQrUrl: null,
           hasSC: false,
+          scRate: 10,
           hasVAT: false,
+          vatRate: 7,
           discountType: 'baht',
           discountVal: 0,
           dishes: []
