@@ -13,62 +13,72 @@
   <!-- QRCode.js Library for EMVCo QR code generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    /* Set Sarabun as the primary font */
     body, input, select, textarea, button {
       font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    /* Prevent iOS input zoom and styling enhancements */
     input, select, textarea, button {
       font-size: 16px;
       -webkit-tap-highlight-color: transparent;
     }
     @media (min-width: 640px) {
       input, select, textarea {
-        font-size: 0.875rem; /* 14px */
+        font-size: 0.875rem;
       }
     }
-    /* Safe Area Padding for iPhone X+ */
     .safe-bottom {
       padding-bottom: env(safe-area-inset-bottom, 1rem);
     }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-24 sm:pb-12 selection:bg-blue-100 selection:text-blue-800">
+<body class="bg-slate-50/80 text-slate-800 antialiased min-h-screen pb-24 sm:pb-14 selection:bg-indigo-100 selection:text-indigo-800">
 
-  <!-- Header Bar -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-    <div class="max-w-3xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black shadow-sm text-lg">
+  <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 transition-all">
+    <div class="max-w-3xl mx-auto px-4 py-3 sm:py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 text-white flex items-center justify-center font-extrabold shadow-md shadow-indigo-500/20 text-lg">
           ฿
         </div>
         <div>
-          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">PromptPay Bill Splitter</h1>
-          <p class="text-xs text-slate-500">หารค่าอาหาร แยกบิลหลายร้าน พร้อมเพย์ QR Code</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight tracking-tight">PromptPay Bill Splitter</h1>
+            <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-700 border border-indigo-200/60 rounded-full">PRO</span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium">หารค่าอาหาร แยกบิลหลายร้าน สร้าง QR จ่ายเงินทันใจ</p>
         </div>
       </div>
-      <button type="button" onclick="resetAllData()" class="px-2.5 py-1.5 sm:px-3 text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-1 border border-slate-200">
+      <button type="button" onclick="resetAllData()" class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50/80 active:scale-95 rounded-xl transition-all flex items-center gap-1.5 border border-slate-200/90 shadow-2xs">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         <span>เริ่มใหม่</span>
       </button>
     </div>
   </header>
 
-  <main class="max-w-3xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-5">
+  <main class="max-w-3xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-5">
 
     <!-- Multi-Shop / Multi-Bill Tabs -->
-    <section class="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-slate-200 space-y-3">
+    <section class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/70 space-y-3.5 transition-all">
       <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">🏪</span>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
+            🏪
+          </div>
           <div>
-            <h2 class="text-sm sm:text-base font-bold text-slate-900">ร้านค้า / บิลทั้งหมด (<span id="totalBillsCount">1</span> ร้าน)</h2>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900 tracking-tight">ร้านค้า / บิลทั้งหมด (<span id="totalBillsCount" class="text-indigo-600">1</span>)</h2>
             <p class="text-xs text-slate-400">สลับร้านเพื่อใส่เมนู หรือกดเพิ่มร้านใหม่ได้ไม่อั้น</p>
           </div>
         </div>
-        <button type="button" onclick="addNewBill()" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 font-semibold text-xs rounded-xl border border-blue-200 transition flex items-center gap-1">
+        <button type="button" onclick="addNewBill()" class="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs shadow-indigo-500/20 transition-all flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span> เพิ่มร้าน / บิลใหม่</span>
+          <span>เพิ่มร้านใหม่</span>
         </button>
       </div>
 
@@ -76,16 +86,19 @@
       <div id="billTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar"></div>
 
       <!-- Active Bill Quick Editor -->
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
-        <div class="flex items-center gap-2 flex-1">
-          <label class="font-medium text-slate-600 whitespace-nowrap">ชื่อร้าน / บิลนี้:</label>
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2.5 bg-slate-50/80 p-3 sm:p-3.5 rounded-2xl border border-slate-200/60 text-xs">
+        <div class="flex items-center gap-2.5 flex-1">
+          <label class="font-bold text-slate-600 whitespace-nowrap flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-indigo-500 inline-block"></span>
+            ชื่อร้าน / บิลนี้:
+          </label>
           <input id="currentBillNameInput" type="text" oninput="updateCurrentBillName(this.value)" 
                  placeholder="เช่น ร้านชาบู, คาเฟ่ของหวาน" 
-                 class="w-full max-w-xs px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 class="w-full max-w-xs px-3.5 py-2 bg-white border border-slate-300/80 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-2xs">
         </div>
         <div class="flex items-center gap-2 justify-end">
-          <span class="text-slate-500">ยอดรวมร้านนี้: <b id="currentBillTotalMini" class="font-mono text-emerald-600 font-bold">0.00</b> บ.</span>
-          <button type="button" id="btnDeleteCurrentBill" onclick="deleteCurrentBill()" class="px-2.5 py-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition border border-slate-200 flex items-center gap-1">
+          <span class="text-slate-500 font-medium">ยอดร้านนี้: <b id="currentBillTotalMini" class="font-mono text-emerald-600 font-bold text-sm">0.00</b> บ.</span>
+          <button type="button" id="btnDeleteCurrentBill" onclick="deleteCurrentBill()" class="px-2.5 py-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 rounded-xl transition-all border border-slate-200/70 flex items-center gap-1 text-[11px] font-semibold">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             <span>ลบบิลนี้</span>
           </button>
@@ -94,24 +107,26 @@
     </section>
 
     <!-- STEP 1: Friends List (Shared Across All Bills) -->
-    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-3.5">
+    <section class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs border border-slate-200/70 space-y-4 transition-all">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base">
-          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">1</div>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-extrabold text-sm border border-blue-100/60 shadow-2xs">1</div>
           <div>
-            <h2 class="text-sm sm:text-base font-bold">รายชื่อเพื่อนร่วมตี้ (ใส่ชื่อทุกคนที่นี่ก่อน)</h2>
-            <p class="text-xs text-slate-400 font-normal">เพิ่มรายชื่อครั้งเดียว นำไปเลือกคนจ่ายและแชร์อาหารได้ทุกบิล</p>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900 tracking-tight">รายชื่อเพื่อนร่วมตี้</h2>
+            <p class="text-xs text-slate-400">ใส่ชื่อเพื่อนและตัวคุณ เพื่อนำไปเลือกคนจ่ายและแชร์อาหาร</p>
           </div>
         </div>
-        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full"><span id="friendCountBadge">0</span> คน</span>
+        <span class="text-xs font-bold text-indigo-700 bg-indigo-50/90 border border-indigo-100 px-3 py-1 rounded-full"><span id="friendCountBadge">0</span> คน</span>
       </div>
 
       <div class="flex gap-2">
-        <input id="friendNameInput" type="text" placeholder="พิมพ์ชื่อเพื่อน เช่น นนท์, มินต์ แล้วกด Enter หรือเพิ่มเพื่อน" 
-               onkeydown="if(event.key==='Enter') addFriend()"
-               class="flex-1 px-3.5 py-2.5 sm:py-2 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-        <button type="button" onclick="addFriend()" class="px-4 sm:px-5 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium rounded-xl text-sm transition shadow-xs">
-          + เพิ่มเพื่อน
+        <div class="relative flex-1">
+          <input id="friendNameInput" type="text" placeholder="พิมพ์ชื่อเพื่อน เช่น นนท์, มินต์ แล้วกด Enter หรือเพิ่มเพื่อน" 
+                 onkeydown="if(event.key==='Enter') addFriend()"
+                 class="w-full px-4 py-2.5 sm:py-2.5 bg-slate-50/60 border border-slate-300/80 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm transition-all shadow-2xs">
+        </div>
+        <button type="button" onclick="addFriend()" class="px-4 sm:px-6 py-2.5 sm:py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold rounded-xl text-sm transition-all shadow-sm flex items-center gap-1.5">
+          <span>+ เพิ่มเพื่อน</span>
         </button>
       </div>
 
@@ -119,33 +134,36 @@
     </section>
 
     <!-- STEP 2: Payee Account for Current Bill -->
-    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-4">
+    <section class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs border border-slate-200/70 space-y-4 transition-all">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base">
-          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">2</div>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-extrabold text-sm border border-blue-100/60 shadow-2xs">2</div>
           <div>
-            <h2 class="text-sm sm:text-base font-bold">คนสำรองจ่ายบิลร้านนี้ (Payer & PromptPay)</h2>
-            <p class="text-xs text-slate-400 font-normal">แตะเลือกเพื่อนที่จ่ายเงินร้านนี้ และใส่บัญชีรับเงินโอน</p>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900 tracking-tight">คนสำรองจ่ายบิลร้านนี้ (Payer & PromptPay)</h2>
+            <p class="text-xs text-slate-400">แตะเลือกเพื่อนที่ออกเงินร้านนี้ และตั้งค่า QR Code รับเงินโอน</p>
           </div>
         </div>
       </div>
 
       <!-- Quick select payer from friends -->
-      <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200 space-y-2">
+      <div class="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/60 space-y-2.5">
         <div class="flex items-center justify-between flex-wrap gap-1">
-          <label class="text-xs font-semibold text-slate-600">ใครเป็นคนสำรองจ่ายร้านนี้?</label>
+          <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            ใครเป็นคนสำรองจ่ายร้านนี้?
+          </label>
           <span class="text-[11px] text-slate-400">แตะเพื่อเลือกชื่อเพื่อนจากข้อ 1</span>
         </div>
-        <div id="payerQuickSelectBadges" class="flex flex-wrap gap-1.5"></div>
+        <div id="payerQuickSelectBadges" class="flex flex-wrap gap-2"></div>
       </div>
 
       <!-- QR Method Switcher Tabs -->
-      <div class="flex p-1 bg-slate-100 rounded-xl max-w-md">
-        <button type="button" id="tabModeAuto" onclick="switchQrInputMode('auto')" class="flex-1 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5">
+      <div class="flex p-1 bg-slate-100/90 rounded-2xl max-w-md border border-slate-200/60">
+        <button type="button" id="tabModeAuto" onclick="switchQrInputMode('auto')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
           <span>สร้าง QR ระบุยอดอัตโนมัติ</span>
         </button>
-        <button type="button" id="tabModeUpload" onclick="switchQrInputMode('upload')" class="flex-1 py-2 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5">
+        <button type="button" id="tabModeUpload" onclick="switchQrInputMode('upload')" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           <span>อัปโหลดรูป QR ของคนจ่าย</span>
         </button>
@@ -154,21 +172,21 @@
       <!-- Mode 1: Auto Dynamic QR (PromptPay Number) -->
       <div id="sectionAutoQr" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1.5">
-            เบอร์โทร (10 หลัก) หรือ บัตร ปชช. (13 หลัก) ของคนจ่าย <span class="text-red-500">*</span>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            เบอร์โทร (10 หลัก) หรือ บัตร ปชช. (13 หลัก) ของคนจ่าย <span class="text-rose-500">*</span>
           </label>
           <div class="relative">
             <input id="promptpayIdInput" type="tel" inputmode="numeric" placeholder="เช่น 0812345678" maxlength="13"
                    oninput="updateCurrentBillPromptPay(this.value)"
-                   class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono transition">
-            <span class="absolute right-3 top-2.5 text-xs text-slate-400 pointer-events-none">พร้อมเพย์</span>
+                   class="w-full px-4 py-2.5 bg-slate-50/60 border border-slate-300/80 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono tracking-wider transition-all shadow-2xs">
+            <span class="absolute right-3.5 top-3 text-[11px] font-bold text-slate-400 uppercase pointer-events-none">พร้อมเพย์</span>
           </div>
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1.5">ชื่อผู้รับเงิน / คนจ่ายร้านนี้</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้รับเงิน / คนจ่ายร้านนี้</label>
           <input id="receiverNameInput" type="text" placeholder="เช่น นนท์" 
                  oninput="updateCurrentBillPayer(this.value)"
-                 class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+                 class="w-full px-4 py-2.5 bg-slate-50/60 border border-slate-300/80 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm transition-all shadow-2xs">
         </div>
       </div>
 
@@ -176,42 +194,45 @@
       <div id="sectionUploadQr" class="hidden space-y-3">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1.5">ชื่อผู้รับเงิน / คนจ่าย <span class="text-red-500">*</span></label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้รับเงิน / คนจ่าย <span class="text-rose-500">*</span></label>
             <input id="receiverNameUploadInput" type="text" placeholder="เช่น นนท์" 
                    oninput="updateCurrentBillPayer(this.value)"
-                   class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+                   class="w-full px-4 py-2.5 bg-slate-50/60 border border-slate-300/80 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm transition-all shadow-2xs">
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1.5">เลขบัญชีหรือเบอร์ (ข้อความช่วยจำ)</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">เลขบัญชีหรือเบอร์ (ข้อความช่วยจำ)</label>
             <input id="accountNoteInput" type="text" placeholder="เช่น กสิกร xxx-x-xxxxx-x หรือ 081-xxx-xxxx" 
                    oninput="updateCurrentBillAccountNote(this.value)"
-                   class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+                   class="w-full px-4 py-2.5 bg-slate-50/60 border border-slate-300/80 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm transition-all shadow-2xs">
           </div>
         </div>
 
-        <div class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-4 text-center transition bg-slate-50/60">
+        <div class="border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-2xl p-4 sm:p-5 text-center transition-all bg-slate-50/50 hover:bg-indigo-50/30">
           <input id="qrImageFileInput" type="file" accept="image/*" class="hidden" onchange="handleQrFileUpload(event)">
           
           <div id="uploadPlaceholder" onclick="document.getElementById('qrImageFileInput').click()" class="cursor-pointer space-y-2 py-3">
-            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 mx-auto flex items-center justify-center">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center border border-indigo-100 shadow-2xs">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
             </div>
             <div>
-              <span class="text-sm font-semibold text-blue-600 hover:underline">แตะเพื่อเลือกรูปภาพ QR Code</span>
+              <span class="text-sm font-bold text-indigo-600 hover:underline">แตะเพื่อเลือกรูปภาพ QR Code</span>
               <span class="text-slate-500 text-sm"> ของคนจ่ายร้านนี้</span>
             </div>
-            <p class="text-xs text-slate-400">สลิปหรือ QR ธนาคาร (JPG, PNG)</p>
+            <p class="text-xs text-slate-400 font-medium">สลิปหรือ QR ธนาคาร (JPG, PNG)</p>
           </div>
 
           <div id="uploadPreviewContainer" class="hidden flex flex-col sm:flex-row items-center justify-center gap-4 py-2">
-            <div class="relative w-28 h-28 rounded-xl overflow-hidden border-2 border-emerald-500 shadow-md bg-white p-1">
-              <img id="customQrPreviewImg" src="" alt="Custom QR Preview" class="w-full h-full object-contain rounded-lg">
+            <div class="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-md bg-white p-1">
+              <img id="customQrPreviewImg" src="" alt="Custom QR Preview" class="w-full h-full object-contain rounded-xl">
             </div>
             <div class="text-left space-y-1">
-              <p class="text-xs font-semibold text-emerald-700">✓ รูปภาพพร้อมใช้งานสำหรับบิลนี้</p>
+              <p class="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                รูปภาพพร้อมใช้งานสำหรับบิลนี้
+              </p>
               <div class="flex gap-2 pt-1.5">
-                <button type="button" onclick="document.getElementById('qrImageFileInput').click()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50">เปลี่ยนรูป</button>
-                <button type="button" onclick="removeUploadedQrImage()" class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100">ลบรูป</button>
+                <button type="button" onclick="document.getElementById('qrImageFileInput').click()" class="px-3 py-1.5 bg-white border border-slate-300/80 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-2xs">เปลี่ยนรูป</button>
+                <button type="button" onclick="removeUploadedQrImage()" class="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-xl text-xs font-semibold hover:bg-rose-100">ลบรูป</button>
               </div>
             </div>
           </div>
@@ -220,66 +241,73 @@
     </section>
 
     <!-- STEP 3: Dishes Input for Active Bill -->
-    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-4">
+    <section class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs border border-slate-200/70 space-y-4 transition-all">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base">
-          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">3</div>
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-extrabold text-sm border border-blue-100/60 shadow-2xs">3</div>
           <div>
-            <h2 class="text-sm sm:text-base font-bold">รายการอาหารของ: <span id="activeBillTitleHighlight" class="text-blue-600">ร้านที่ 1</span></h2>
-            <p class="text-xs text-slate-400 font-normal">ใส่เมนูและเลือกเพื่อนที่กินในร้านนี้</p>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900 tracking-tight">รายการอาหารของ: <span id="activeBillTitleHighlight" class="text-indigo-600">ร้านที่ 1</span></h2>
+            <p class="text-xs text-slate-400">ใส่เมนูและเลือกเพื่อนที่กินในร้านนี้</p>
           </div>
         </div>
       </div>
 
-      <div class="space-y-3 bg-slate-50/70 p-3.5 sm:p-4 rounded-xl border border-slate-200">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div class="space-y-3.5 bg-slate-50/80 p-3.5 sm:p-5 rounded-2xl border border-slate-200/60">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div class="sm:col-span-2">
-            <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อเมนูอาหาร / เครื่องดื่ม</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อเมนูอาหาร / เครื่องดื่ม</label>
             <input id="dishNameInput" type="text" placeholder="เช่น ชาบูหมู, กาแฟลาเต้" 
-                   class="w-full px-3.5 py-2.5 sm:py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                   class="w-full px-4 py-2.5 bg-white border border-slate-300/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm shadow-2xs">
           </div>
           <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">ราคา (บาท)</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">จำนวน (จาน/แก้ว)</label>
+            <input id="dishQtyInput" type="number" min="1" step="1" value="1" placeholder="1"
+                   class="w-full px-3 py-2.5 bg-white border border-slate-300/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono font-semibold shadow-2xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">ราคาต่อหน่วย (บาท)</label>
             <input id="dishPriceInput" type="number" step="any" inputmode="decimal" placeholder="0.00" 
-                   class="w-full px-3.5 py-2.5 sm:py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono">
+                   class="w-full px-3 py-2.5 bg-white border border-slate-300/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono font-semibold shadow-2xs">
           </div>
         </div>
 
         <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-medium text-slate-600">ใครกินจานนี้บ้าง?</label>
-            <div class="flex gap-2">
-              <button type="button" onclick="toggleAllDishMembers(true)" class="text-xs text-blue-600 hover:underline">เลือกทุกคน</button>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <span>ใครกินจานนี้บ้าง?</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="toggleAllDishMembers(true)" class="text-xs font-semibold text-blue-600 hover:text-blue-700">เลือกทุกคน</button>
               <span class="text-slate-300 text-xs">|</span>
-              <button type="button" onclick="toggleAllDishMembers(false)" class="text-xs text-slate-500 hover:underline">ล้าง</button>
+              <button type="button" onclick="toggleAllDishMembers(false)" class="text-xs font-semibold text-slate-400 hover:text-slate-600">ล้าง</button>
             </div>
           </div>
           <div id="dishMembersCheckboxes" class="flex flex-wrap gap-2 text-sm"></div>
         </div>
 
-        <button type="button" onclick="addDish()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl text-sm transition shadow-xs flex items-center justify-center gap-1.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <button type="button" onclick="addDish()" class="w-full py-2.5 sm:py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.99] text-white font-bold rounded-xl text-sm transition-all shadow-sm shadow-emerald-600/20 flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
           <span>เพิ่มรายการอาหารลงในร้านนี้</span>
         </button>
       </div>
 
       <!-- Dishes Table & Mobile Cards -->
-      <div>
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-semibold text-slate-700">รายการในร้านนี้ (<span id="dishCountBadge">0</span>)</span>
-          <span class="text-xs font-medium text-slate-500">รวมค่าอาหารดิบ: <b id="subtotalRawText" class="text-slate-800 font-mono">0.00</b> บ.</span>
+      <div class="pt-1">
+        <div class="flex justify-between items-center mb-2.5">
+          <span class="text-xs font-bold text-slate-800">รายการในร้านนี้ (<span id="dishCountBadge" class="text-indigo-600">0</span>)</span>
+          <span class="text-xs font-medium text-slate-500">รวมค่าอาหารดิบ: <b id="subtotalRawText" class="text-slate-900 font-mono text-sm">0.00</b> บ.</span>
         </div>
         
         <div id="dishesMobileList" class="block sm:hidden space-y-2"></div>
 
-        <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl">
+        <div class="hidden sm:block overflow-hidden border border-slate-200/70 rounded-2xl shadow-2xs">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-slate-600 text-xs font-semibold uppercase tracking-wider">
+            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
               <tr>
-                <th class="p-3">เมนู</th>
-                <th class="p-3 text-right">ราคา</th>
-                <th class="p-3">คนแชร์</th>
-                <th class="p-3 text-center w-16">ลบ</th>
+                <th class="p-3.5 pl-4">เมนู</th>
+                <th class="p-3.5 text-right">ราคา</th>
+                <th class="p-3.5">คนแชร์</th>
+                <th class="p-3.5 text-center w-16">ลบ</th>
               </tr>
             </thead>
             <tbody id="dishesTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
@@ -289,123 +317,179 @@
     </section>
 
     <!-- STEP 4: Service Charge, VAT & Discount (Per Current Bill) -->
-    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-4">
-      <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base border-b border-slate-100 pb-3">
-        <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">4</div>
+    <section class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xs border border-slate-200/70 space-y-4 transition-all">
+      <div class="flex items-center gap-3 text-slate-800 font-semibold text-base border-b border-slate-100 pb-3">
+        <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-extrabold text-sm border border-blue-100/60 shadow-2xs">4</div>
         <div>
-          <h2 class="text-sm sm:text-base font-bold">ค่าบริการ, ภาษี & ส่วนลด (ของร้านนี้)</h2>
+          <h2 class="text-sm sm:text-base font-bold tracking-tight">ค่าบริการ, ภาษี & ส่วนลด (ของร้านนี้)</h2>
           <p class="text-xs text-slate-400 font-normal">แต่ละร้านคิด SC, VAT หรือส่วนลดแยกกันได้อย่างอิสระ</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Service Charge & VAT Inputs -->
-        <div class="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <span class="text-xs font-semibold text-slate-600 block">ภาษี & เซอร์วิสชาร์จ (Plus Plus)</span>
+        <div class="space-y-3 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60">
+          <span class="text-xs font-bold text-slate-700 block">ภาษี & เซอร์วิสชาร์จ (Plus Plus)</span>
           
           <!-- Service Charge Row -->
-          <div class="flex items-center justify-between gap-2">
-            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 select-none">
-              <input type="checkbox" id="scCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+          <div class="flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-slate-200/60 shadow-2xs">
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs sm:text-sm font-semibold text-slate-700 select-none">
+              <input type="checkbox" id="scCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500">
               <span>Service Charge</span>
             </label>
-            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-300 focus-within:ring-2 focus-within:ring-blue-500">
+            <div class="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500">
               <input type="number" id="scRateInput" value="10" min="0" max="100" step="any" placeholder="10"
                      oninput="onBillTaxDiscountChanged()" 
-                     class="w-12 text-xs font-mono text-right font-bold text-slate-800 focus:outline-none">
-              <span class="text-xs font-semibold text-slate-400">%</span>
+                     class="w-10 text-xs font-mono text-right font-bold text-slate-800 bg-transparent focus:outline-none">
+              <span class="text-xs font-bold text-slate-400">%</span>
             </div>
           </div>
 
           <!-- VAT Row -->
-          <div class="flex items-center justify-between gap-2">
-            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 select-none">
-              <input type="checkbox" id="vatCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+          <div class="flex items-center justify-between gap-2 p-2 bg-white rounded-xl border border-slate-200/60 shadow-2xs">
+            <label class="flex items-center gap-2.5 cursor-pointer text-xs sm:text-sm font-semibold text-slate-700 select-none">
+              <input type="checkbox" id="vatCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500">
               <span>VAT</span>
             </label>
-            <div class="flex items-center gap-1 bg-white px-2 py-1 rounded-lg border border-slate-300 focus-within:ring-2 focus-within:ring-blue-500">
+            <div class="flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500">
               <input type="number" id="vatRateInput" value="7" min="0" max="100" step="any" placeholder="7"
                      oninput="onBillTaxDiscountChanged()" 
-                     class="w-12 text-xs font-mono text-right font-bold text-slate-800 focus:outline-none">
-              <span class="text-xs font-semibold text-slate-400">%</span>
+                     class="w-10 text-xs font-mono text-right font-bold text-slate-800 bg-transparent focus:outline-none">
+              <span class="text-xs font-bold text-slate-400">%</span>
             </div>
           </div>
-          <p class="text-[11px] text-slate-400">ติ๊กถูกเพื่อเปิดใช้งาน และสามารถเปลี่ยน % ได้ตามบิลจริง</p>
+          <p class="text-[11px] text-slate-400 font-medium">ติ๊กถูกเพื่อเปิดใช้งาน และสามารถเปลี่ยน % ได้ตามบิลจริง</p>
         </div>
 
         <!-- Discount Inputs with Switcher (% / ฿) -->
-        <div class="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+        <div class="space-y-3 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60">
           <div class="flex justify-between items-center">
-            <span class="text-xs font-semibold text-slate-600">ส่วนลดร้านนี้</span>
-            <div class="inline-flex p-0.5 bg-slate-200 rounded-lg text-xs font-medium">
-              <button type="button" id="btnDiscBaht" onclick="setDiscountType('baht')" class="px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-xs transition">บาท (฿)</button>
-              <button type="button" id="btnDiscPercent" onclick="setDiscountType('percent')" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">เปอร์เซ็นต์ (%)</button>
+            <span class="text-xs font-bold text-slate-700">ส่วนลดร้านนี้</span>
+            <div class="inline-flex p-0.5 bg-slate-200/80 rounded-xl text-xs font-bold">
+              <button type="button" id="btnDiscBaht" onclick="setDiscountType('baht')" class="px-2.5 py-1 rounded-lg bg-white text-indigo-700 font-bold shadow-2xs transition-all">บาท (฿)</button>
+              <button type="button" id="btnDiscPercent" onclick="setDiscountType('percent')" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition-all">เปอร์เซ็นต์ (%)</button>
             </div>
           </div>
 
           <div class="relative">
             <input id="discountInput" type="number" step="any" inputmode="decimal" placeholder="เช่น 100 หรือ 10" 
                    oninput="onBillTaxDiscountChanged()"
-                   class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono transition pr-12">
-            <span id="discountUnitLabel" class="absolute right-3 top-2.5 text-xs font-bold text-slate-400 pointer-events-none">บาท</span>
+                   class="w-full px-4 py-2.5 bg-white border border-slate-300/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-mono transition-all pr-12 shadow-2xs">
+            <span id="discountUnitLabel" class="absolute right-4 top-3 text-xs font-bold text-slate-400 pointer-events-none">บาท</span>
           </div>
 
-          <div id="discountPreviewNote" class="text-xs text-emerald-600 font-medium hidden">
+          <div id="discountPreviewNote" class="text-xs text-emerald-600 font-semibold hidden">
             <span>💡 ส่วนลด: <span id="discountPreviewText">0.00</span> บาท</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Rounding Options Control -->
+      <div class="bg-slate-50/80 p-3.5 sm:p-4 rounded-2xl border border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+        <div>
+          <span class="text-xs font-bold text-slate-700 block">🪙 การปัดเศษสตางค์ (Rounding Options)</span>
+          <p class="text-[11px] text-slate-400">ช่วยให้เพื่อนโอนเงินง่าย ไม่ต้องมีเศษ .33 หรือ .67 สตางค์</p>
+        </div>
+        <div class="inline-flex p-1 bg-slate-200/80 rounded-xl text-xs font-bold w-full sm:w-auto">
+          <button type="button" id="btnRoundExact" onclick="setRoundingMode('exact')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-white text-indigo-700 shadow-2xs transition-all">เป๊ะทุกสตางค์</button>
+          <button type="button" id="btnRoundCeil1" onclick="setRoundingMode('ceil1')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all">ปัดขึ้นเต็มบาท</button>
+          <button type="button" id="btnRoundNearest5" onclick="setRoundingMode('nearest5')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all">ปัด 5 บาท</button>
         </div>
       </div>
     </section>
 
     <!-- Calculate Button -->
-    <button type="button" onclick="calculateSummary()" class="w-full py-3.5 sm:py-4 bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-bold rounded-2xl transition shadow-lg flex items-center justify-center gap-2 text-base">
-      <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+    <button type="button" onclick="calculateSummary()" class="w-full py-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:opacity-95 active:scale-[0.99] text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-950/20 flex items-center justify-center gap-2.5 text-base cursor-pointer">
+      <div class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+      </div>
       <span>คำนวณเงินสุทธิ & สร้างสรุปทุกร้าน</span>
     </button>
 
     <!-- STEP 5: Results Section (Multi-Bill Grand Total & Settlement) -->
     <section id="resultSection" class="hidden space-y-4">
-      <!-- Grand Summary Card -->
-      <div class="bg-gradient-to-br from-slate-900 to-blue-950 text-white p-5 rounded-2xl shadow-md space-y-3">
-        <div class="flex justify-between items-baseline border-b border-white/10 pb-3">
+      <!-- Grand Summary Card with Premium Modern Gradient -->
+      <div class="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 rounded-3xl shadow-xl shadow-slate-950/10 space-y-4 border border-white/10">
+        <div class="absolute -right-10 -top-10 w-44 h-44 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-10 -bottom-10 w-44 h-44 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative flex justify-between items-start sm:items-center flex-col sm:flex-row gap-3 border-b border-white/10 pb-4">
           <div>
-            <p class="text-xs text-slate-300 uppercase tracking-wider font-semibold">ยอดรวมทุกร้านทั้งวัน (Grand Total)</p>
-            <h3 id="grandTotalDisplay" class="text-3xl sm:text-4xl font-black text-emerald-400 mt-0.5">0.00 <span class="text-lg font-normal text-white">บาท</span></h3>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <p class="text-xs text-slate-300 uppercase tracking-wider font-bold">ยอดรวมทุกร้านทั้งวัน (Grand Total)</p>
+            </div>
+            <h3 id="grandTotalDisplay" class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-emerald-300 mt-1 font-mono">0.00 <span class="text-lg font-normal text-slate-300">บาท</span></h3>
           </div>
-          <button type="button" onclick="copyLineSummary()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5 active:scale-95">
+          <button type="button" onclick="copyLineSummary()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-bold text-xs rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2 active:scale-95">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.95.56 3.77 1.52 5.31L2.2 21.8l4.63-1.22C8.31 21.49 10.1 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.63 0-3.15-.47-4.44-1.29l-.32-.2-2.75.72.74-2.68-.21-.33C4.38 15.02 3.9 13.56 3.9 12c0-4.46 3.64-8.1 8.1-8.1s8.1 3.64 8.1 8.1-3.64 8.1-8.1 8.1z"/></svg>
-            <span>คัดลอกสรุปทุกร้านส่ง LINE</span>
+            <span>คัดลอกสรุปส่ง LINE</span>
           </button>
         </div>
 
         <!-- Shops breakdown pills -->
-        <div class="space-y-1.5 pt-1">
-          <span class="text-xs text-slate-300 font-medium">ยอดแยกตามร้าน:</span>
+        <div class="relative space-y-2 pt-0.5">
+          <span class="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
+            <span>ยอดแยกตามร้าน:</span>
+          </span>
           <div id="shopsBreakdownPills" class="flex flex-wrap gap-2 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- Payment Collection Tracker Card -->
+      <div class="bg-white border border-slate-200/80 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+              📋
+            </div>
+            <div>
+              <h4 class="text-xs sm:text-sm font-bold text-slate-900">ติดตามสถานะการโอนเงิน (Payment Tracker)</h4>
+              <p class="text-[11px] text-slate-400">แตะเพื่อเปลี่ยนสถานะเมื่อเพื่อนโอนเงินแล้ว</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="copyPendingReminder()" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold rounded-xl border border-amber-200/80 transition-all flex items-center gap-1.5">
+              <span>🔔 คัดลอกทวงเฉพาะคนค้าง</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress bar and counter -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs font-semibold">
+            <span class="text-slate-600">สถานะ: <b id="trackerStatusText" class="text-indigo-600">โอนแล้ว 0/0 คน</b></span>
+            <span class="text-slate-500">ยอดค้างโอน: <b id="trackerPendingAmount" class="font-mono text-rose-600 font-bold">0.00 บ.</b></span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+            <div id="trackerProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-300 w-0"></div>
+          </div>
         </div>
       </div>
 
       <!-- Result View Switcher (All Bills vs Current Bill) -->
       <div class="flex items-center justify-between">
-        <div class="inline-flex p-1 bg-slate-200 rounded-xl text-xs font-semibold">
-          <button type="button" id="btnViewAllBills" onclick="switchResultView('all')" class="px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-xs transition">
-            🌟 ยอดรวมสุทธิทุกร้าน (พร้อมสรุปการโอน)
+        <div class="inline-flex p-1 bg-slate-200/80 rounded-2xl text-xs font-bold border border-slate-200">
+          <button type="button" id="btnViewAllBills" onclick="switchResultView('all')" class="px-3.5 py-2 rounded-xl bg-white text-indigo-700 shadow-2xs transition-all flex items-center gap-1.5">
+            <span>🌟 ยอดรวมสุทธิ (พร้อมสรุปโอน)</span>
           </button>
-          <button type="button" id="btnViewCurrentBill" onclick="switchResultView('current')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
-            📋 เฉพาะร้านที่เลือก
+          <button type="button" id="btnViewCurrentBill" onclick="switchResultView('current')" class="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5">
+            <span>📋 เฉพาะร้านที่เลือก</span>
           </button>
         </div>
       </div>
 
-      <!-- VIEW A: All Bills Net Settlement (ใครโอนให้ใคร เท่าไหร่) -->
-      <div id="viewAllBillsSection" class="space-y-3">
-        <h3 class="text-sm font-bold text-slate-800">สรุปยอดรวมที่แต่ละคนต้องจ่าย (Net Total):</h3>
+      <!-- VIEW A: All Bills Net Settlement -->
+      <div id="viewAllBillsSection" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-800">สรุปยอดรวมที่แต่ละคนต้องจ่าย (Net Breakdown):</h3>
+        </div>
         <div id="memberGrandCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
 
         <!-- Settlement Transfer List -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-          <div class="flex items-center gap-2 border-b border-slate-100 pb-2">
-            <span class="text-base">💸</span>
+        <div class="bg-white border border-slate-200/70 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3.5">
+          <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">💸</div>
             <div>
               <h4 class="text-xs sm:text-sm font-bold text-slate-900">รายการโอนเงินสุทธิ (Net Transfer Settlements)</h4>
               <p class="text-[11px] text-slate-400">ระบบคำนวณหักลบระหว่างคนสำรองจ่ายให้แล้ว ไม่ต้องโอนซ้ำซ้อน</p>
@@ -417,9 +501,12 @@
 
       <!-- VIEW B: Current Bill Detailed Breakdown -->
       <div id="viewCurrentBillSection" class="hidden space-y-3">
-        <div class="flex justify-between items-center">
-          <h3 class="text-sm font-bold text-slate-800">ยอดเฉพาะร้าน: <span id="currentBillResultTitle" class="text-blue-600">ร้านที่ 1</span></h3>
-          <span id="currentBillResultPayerTag" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">คนจ่าย: -</span>
+        <div class="flex justify-between items-center bg-white p-3.5 rounded-2xl border border-slate-200/70">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <span>ยอดเฉพาะร้าน:</span>
+            <span id="currentBillResultTitle" class="text-indigo-600 font-extrabold">ร้านที่ 1</span>
+          </h3>
+          <span id="currentBillResultPayerTag" class="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1 rounded-xl">คนจ่าย: -</span>
         </div>
         <div id="memberCurrentBillCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
       </div>
@@ -428,64 +515,64 @@
   </main>
 
   <!-- Sticky Bottom Bar on Mobile -->
-  <div id="mobileStickyBar" class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 flex items-center justify-between z-20 safe-bottom shadow-lg">
+  <div id="mobileStickyBar" class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200/80 px-4 py-3 flex items-center justify-between z-20 safe-bottom shadow-lg">
     <div>
-      <span class="text-[11px] text-slate-500 block">ยอดรวมทั้งวัน (<span id="mobileBillsCount">1</span> ร้าน)</span>
-      <span id="mobileBarTotal" class="text-base font-black text-slate-900">0.00 บาท</span>
+      <span class="text-[11px] font-semibold text-slate-400 block">ยอดรวมทั้งวัน (<span id="mobileBillsCount">1</span> ร้าน)</span>
+      <span id="mobileBarTotal" class="text-base font-black text-slate-900 font-mono">0.00 บาท</span>
     </div>
     <div class="flex gap-2">
-      <button type="button" onclick="calculateSummary()" class="px-4 py-2 bg-blue-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs">
+      <button type="button" onclick="calculateSummary()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20">
         คำนวณ / อัปเดต
       </button>
     </div>
   </div>
 
   <!-- QR Code Modal Dialog -->
-  <div id="qrModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div id="qrModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="fixed inset-0" onclick="closeQrModal()"></div>
 
-    <div class="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto safe-bottom animate-in fade-in slide-in-from-bottom duration-200">
+    <div class="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto safe-bottom animate-in fade-in slide-in-from-bottom duration-200 border border-slate-100">
       
-      <button type="button" onclick="closeQrModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full">
+      <button type="button" onclick="closeQrModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
 
       <div class="flex flex-col items-center pt-2">
-        <div class="bg-[#003d6b] text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+        <div class="bg-[#003d6b] text-white px-4 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
           <span class="font-extrabold tracking-wider text-xs">THAI QR PAYMENT</span>
         </div>
-        <p id="modalQrSubtitle" class="text-xs font-medium text-slate-400 mt-1">พร้อมเพย์ สแกนจ่ายด้วยทุกแอปธนาคาร</p>
+        <p id="modalQrSubtitle" class="text-xs font-semibold text-slate-400 mt-1.5">พร้อมเพย์ สแกนจ่ายด้วยทุกแอปธนาคาร</p>
       </div>
 
-      <div class="p-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex justify-center items-center mx-auto w-fit shadow-inner min-w-[200px] min-h-[200px]">
+      <div class="p-4 bg-white border border-slate-200 rounded-3xl flex justify-center items-center mx-auto w-fit shadow-xs min-w-[210px] min-h-[210px]">
         <div id="qrCodeTarget" class="p-1 bg-white"></div>
-        <img id="customQrModalImg" src="" alt="PromptPay QR" class="max-w-[210px] max-h-[210px] object-contain hidden rounded-lg">
+        <img id="customQrModalImg" src="" alt="PromptPay QR" class="max-w-[210px] max-h-[210px] object-contain hidden rounded-2xl">
       </div>
 
-      <div class="bg-slate-50 p-3.5 rounded-2xl space-y-1.5 text-sm">
+      <div class="bg-slate-50/90 p-4 rounded-2xl space-y-2 border border-slate-200/60 text-sm">
         <div class="flex justify-between text-xs text-slate-500">
           <span>ผู้รับเงิน (คนสำรองจ่าย):</span>
-          <span id="modalReceiverName" class="font-semibold text-slate-800">-</span>
+          <span id="modalReceiverName" class="font-bold text-slate-800">-</span>
         </div>
         <div class="flex justify-between text-xs text-slate-500">
           <span>พร้อมเพย์ / บัญชี:</span>
-          <span id="modalPromptPayId" class="font-mono text-slate-800">-</span>
+          <span id="modalPromptPayId" class="font-mono font-semibold text-slate-800">-</span>
         </div>
-        <div class="border-t border-slate-200 pt-2 flex justify-between items-baseline">
-          <span class="text-xs text-slate-500">ยอดที่ต้องโอน:</span>
-          <span id="modalPayAmount" class="text-2xl font-black text-blue-700">0.00 บาท</span>
+        <div class="border-t border-slate-200/70 pt-2.5 flex justify-between items-baseline">
+          <span class="text-xs font-semibold text-slate-500">ยอดที่ต้องโอน:</span>
+          <span id="modalPayAmount" class="text-2xl font-black text-indigo-700 font-mono">0.00 บาท</span>
         </div>
       </div>
 
-      <div id="modalNoticeText" class="text-xs text-slate-400 text-center">
+      <div id="modalNoticeText" class="text-xs text-slate-400 font-medium text-center">
         สแกนด้วยแอปธนาคารบนมือถือ ยอดเงินจะขึ้นให้อัตโนมัติ
       </div>
 
-      <div class="flex gap-2 pt-1">
-        <button type="button" onclick="copyModalAmount()" class="flex-1 py-2.5 bg-blue-50 text-blue-700 font-semibold text-xs rounded-xl hover:bg-blue-100 transition active:scale-95">
+      <div class="flex gap-2.5 pt-1">
+        <button type="button" onclick="copyModalAmount()" class="flex-1 py-3 bg-indigo-50 text-indigo-700 font-bold text-xs rounded-xl hover:bg-indigo-100 transition-all active:scale-95 border border-indigo-100">
           คัดลอกยอดเงิน
         </button>
-        <button type="button" onclick="closeQrModal()" class="flex-1 py-2.5 bg-slate-900 text-white font-semibold text-xs rounded-xl hover:bg-slate-800 transition active:scale-95">
+        <button type="button" onclick="closeQrModal()" class="flex-1 py-3 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition-all active:scale-95">
           ปิดหน้าต่าง
         </button>
       </div>
@@ -495,10 +582,10 @@
   <div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-80 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script>
-    // Global shared friend list (เริ่มต้นเป็นค่าว่าง)
     let friends = [];
+    let roundingMode = 'exact'; // 'exact' | 'ceil1' | 'nearest5'
+    let paidStatus = {}; // { friendName: boolean }
 
-    // Multi-bill data model (เริ่มต้นร้านที่ 1 สะอาดพร้อมกรอก)
     let bills = [
       {
         id: 'b_1',
@@ -523,6 +610,15 @@
     let calculatedGrandData = null;
     let qrInstance = null;
 
+    const friendColorPalettes = [
+      { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200/70', badge: 'bg-blue-500' },
+      { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200/70', badge: 'bg-emerald-500' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200/70', badge: 'bg-indigo-500' },
+      { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200/70', badge: 'bg-amber-500' },
+      { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200/70', badge: 'bg-rose-500' },
+      { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200/70', badge: 'bg-purple-500' }
+    ];
+
     window.onload = function() {
       renderFriendsBadgeList();
       renderBillTabs();
@@ -542,20 +638,19 @@
       container.innerHTML = bills.map((bill, index) => {
         const isActive = bill.id === activeBillId;
         const activeClass = isActive 
-          ? 'bg-blue-600 text-white shadow-md border-blue-600' 
-          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200';
+          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm shadow-indigo-600/20 border-transparent' 
+          : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200/80';
         
         return `
           <button type="button" onclick="switchActiveBill('${bill.id}')" 
-                  class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-1.5 ${activeClass}">
-            <span>${index + 1}.</span>
+                  class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all whitespace-nowrap flex items-center gap-1.5 active:scale-95 ${activeClass}">
+            <span class="w-4 h-4 rounded-full ${isActive ? 'bg-white/20' : 'bg-slate-100'} text-[10px] flex items-center justify-center">${index + 1}</span>
             <span class="max-w-[130px] truncate">${escapeHtml(bill.name)}</span>
             <span class="text-[11px] opacity-80 font-normal">(${escapeHtml(bill.payer || 'ยังไม่ระบุคนจ่าย')})</span>
           </button>
         `;
       }).join('');
 
-      // Disable delete button if only 1 bill exists
       const deleteBtn = document.getElementById('btnDeleteCurrentBill');
       if (bills.length <= 1) {
         deleteBtn.classList.add('opacity-40', 'cursor-not-allowed');
@@ -665,12 +760,13 @@
       container.innerHTML = friends.map(f => {
         const isSelected = bill.payer === f;
         const btnClass = isSelected 
-          ? 'bg-blue-600 text-white font-bold shadow-xs' 
-          : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200';
+          ? 'bg-indigo-600 text-white font-bold shadow-xs shadow-indigo-600/20 border-indigo-600' 
+          : 'bg-white text-slate-700 hover:bg-indigo-50/60 border-slate-200/80';
         return `
           <button type="button" onclick="selectPayer('${escapeHtml(f)}')" 
-                  class="px-2.5 py-1 rounded-lg text-xs transition flex items-center gap-1 ${btnClass}">
-            ${isSelected ? '✓ ' : ''}${escapeHtml(f)}
+                  class="px-3 py-1.5 rounded-xl text-xs transition-all flex items-center gap-1.5 border active:scale-95 ${btnClass}">
+            ${isSelected ? '<svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>' : ''}
+            <span>${escapeHtml(f)}</span>
           </button>
         `;
       }).join('');
@@ -704,6 +800,69 @@
       bill.accountNote = note;
     }
 
+    function setDiscountType(type, triggerCalc = true) {
+      const bill = getActiveBill();
+      bill.discountType = type;
+      const bBaht = document.getElementById('btnDiscBaht');
+      const bPercent = document.getElementById('btnDiscPercent');
+      const unitLabel = document.getElementById('discountUnitLabel');
+      const discInput = document.getElementById('discountInput');
+
+      if (type === 'percent') {
+        bPercent.className = 'px-2.5 py-1 rounded-lg bg-white text-indigo-700 font-bold shadow-2xs transition-all';
+        bBaht.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+        unitLabel.innerText = '%';
+        discInput.placeholder = 'เช่น 10 หรือ 15';
+      } else {
+        bBaht.className = 'px-2.5 py-1 rounded-lg bg-white text-indigo-700 font-bold shadow-2xs transition-all';
+        bPercent.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+        unitLabel.innerText = 'บาท';
+        discInput.placeholder = 'เช่น 50 หรือ 100';
+      }
+
+      if (triggerCalc) {
+        onBillTaxDiscountChanged();
+      }
+    }
+
+    function onBillTaxDiscountChanged() {
+      const bill = getActiveBill();
+      const scCheck = document.getElementById('scCheck');
+      const vatCheck = document.getElementById('vatCheck');
+      const scRateInput = document.getElementById('scRateInput');
+      const vatRateInput = document.getElementById('vatRateInput');
+      const discountInput = document.getElementById('discountInput');
+
+      bill.hasSC = scCheck.checked;
+      bill.scRate = parseFloat(scRateInput.value) || 0;
+      bill.hasVAT = vatCheck.checked;
+      bill.vatRate = parseFloat(vatRateInput.value) || 0;
+      bill.discountVal = parseFloat(discountInput.value) || 0;
+
+      const rawSubtotal = bill.dishes.reduce((acc, d) => acc + d.price, 0);
+      let discountAmt = 0;
+      if (bill.discountType === 'percent') {
+        discountAmt = (rawSubtotal * Math.min(bill.discountVal, 100)) / 100;
+      } else {
+        discountAmt = Math.min(bill.discountVal, rawSubtotal);
+      }
+
+      const noteEl = document.getElementById('discountPreviewNote');
+      const textEl = document.getElementById('discountPreviewText');
+      if (bill.discountVal > 0) {
+        noteEl.classList.remove('hidden');
+        textEl.innerText = discountAmt.toFixed(2);
+      } else {
+        noteEl.classList.add('hidden');
+      }
+
+      calculateSummary();
+    }
+
+    function triggerAutoRecalculate() {
+      calculateSummary();
+    }
+
     function switchQrInputMode(mode, save = true) {
       const bill = getActiveBill();
       if (save) bill.qrMode = mode;
@@ -714,13 +873,13 @@
       const sectionUpload = document.getElementById('sectionUploadQr');
 
       if (mode === 'upload') {
-        tabUpload.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5';
-        tabAuto.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5';
+        tabUpload.className = 'flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5';
+        tabAuto.className = 'flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5';
         sectionAuto.classList.add('hidden');
         sectionUpload.classList.remove('hidden');
       } else {
-        tabAuto.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5';
-        tabUpload.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5';
+        tabAuto.className = 'flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5';
+        tabUpload.className = 'flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5';
         sectionUpload.classList.add('hidden');
         sectionAuto.classList.remove('hidden');
       }
@@ -770,7 +929,6 @@
       }
       friends.push(name);
 
-      // หากร้านปัจจุบันยังไม่ได้ตั้งคนสำรองจ่าย ให้ตั้งชื่อแรกที่เพิ่มเป็นคนจ่ายอัตโนมัติ
       const activeBill = getActiveBill();
       if (!activeBill.payer) {
         activeBill.payer = name;
@@ -782,18 +940,16 @@
       renderPayerQuickSelectBadges();
       loadActiveBillForm();
       renderBillTabs();
+      calculateSummary();
       showToast(`เพิ่ม "${name}" เรียบร้อย`, 'success');
     }
 
     function removeFriend(name) {
-      if (friends.length <= 1) {
-        showToast('ต้องมีเพื่อนร่วมโต๊ะอย่างน้อย 1 คน', 'warning');
-        return;
-      }
+      if (friends.length === 0) return;
       friends = friends.filter(f => f !== name);
       bills.forEach(b => {
         if (b.payer === name) {
-          b.payer = friends[0] || 'ผู้สำรองจ่าย';
+          b.payer = friends[0] || '';
         }
         b.dishes.forEach(d => {
           d.members = d.members.filter(m => m !== name);
@@ -802,25 +958,30 @@
       renderFriendsBadgeList();
       renderDishMemberCheckboxes();
       renderPayerQuickSelectBadges();
-      renderDishes();
+      loadActiveBillForm();
       renderBillTabs();
       calculateSummary();
-      showToast(`ลบ "${name}" ออกแล้ว`, 'info');
+      showToast(`ลบ "${name}" แล้ว`, 'info');
     }
 
     function renderFriendsBadgeList() {
       const container = document.getElementById('friendsBadgeList');
       document.getElementById('friendCountBadge').innerText = friends.length;
       if (friends.length === 0) {
-        container.innerHTML = '<span class="text-xs text-slate-400 italic">ยังไม่มีรายชื่อเพื่อน</span>';
+        container.innerHTML = '<span class="text-xs text-slate-400 italic">ยังไม่มีรายชื่อเพื่อน พิมพ์ชื่อแล้วกด + เพิ่มเพื่อน ด้านบนได้เลย</span>';
         return;
       }
-      container.innerHTML = friends.map(f => `
-        <span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-800">
-          <span>${escapeHtml(f)}</span>
-          <button type="button" onclick="removeFriend('${escapeHtml(f)}')" class="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 text-xs font-bold transition">&times;</button>
-        </span>
-      `).join('');
+      container.innerHTML = friends.map((f, idx) => {
+        const pal = friendColorPalettes[idx % friendColorPalettes.length];
+        const initial = f.charAt(0).toUpperCase();
+        return `
+          <span class="inline-flex items-center gap-2 pl-2.5 pr-2 py-1.5 ${pal.bg} ${pal.text} border ${pal.border} rounded-xl text-xs font-bold shadow-2xs transition-all hover:scale-[1.02]">
+            <span class="w-5 h-5 rounded-full ${pal.badge} text-white text-[10px] flex items-center justify-center font-black">${initial}</span>
+            <span>${escapeHtml(f)}</span>
+            <button type="button" onclick="removeFriend('${escapeHtml(f)}')" class="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-white/80 text-xs font-bold transition-all">&times;</button>
+          </span>
+        `;
+      }).join('');
     }
 
     function renderDishMemberCheckboxes() {
@@ -830,9 +991,9 @@
         return;
       }
       container.innerHTML = friends.map(f => `
-        <label class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition">
-          <input type="checkbox" value="${escapeHtml(f)}" checked class="dish-member-cb rounded text-blue-600 w-4 h-4">
-          <span class="text-xs font-medium text-slate-700">${escapeHtml(f)}</span>
+        <label class="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200/80 rounded-xl cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-300 transition-all shadow-2xs select-none">
+          <input type="checkbox" value="${escapeHtml(f)}" checked class="dish-member-cb rounded-md text-indigo-600 w-4 h-4 focus:ring-indigo-500">
+          <span class="text-xs font-semibold text-slate-700">${escapeHtml(f)}</span>
         </label>
       `).join('');
     }
@@ -844,9 +1005,11 @@
     function addDish() {
       const bill = getActiveBill();
       const nameInput = document.getElementById('dishNameInput');
+      const qtyInput = document.getElementById('dishQtyInput');
       const priceInput = document.getElementById('dishPriceInput');
       const name = nameInput.value.trim();
-      const price = parseFloat(priceInput.value);
+      const qty = parseInt(qtyInput.value, 10) || 1;
+      const unitPrice = parseFloat(priceInput.value);
 
       const checkboxes = document.querySelectorAll('.dish-member-cb:checked');
       const selectedMembers = Array.from(checkboxes).map(cb => cb.value);
@@ -855,8 +1018,12 @@
         showToast('กรุณากรอกชื่อเมนูอาหาร', 'warning');
         return;
       }
-      if (isNaN(price) || price <= 0) {
-        showToast('กรุณากรอกราคาที่มากกว่า 0', 'warning');
+      if (qty <= 0) {
+        showToast('จำนวนจานต้องอย่างน้อย 1', 'warning');
+        return;
+      }
+      if (isNaN(unitPrice) || unitPrice <= 0) {
+        showToast('กรุณากรอกราคาต่อหน่วยที่มากกว่า 0', 'warning');
         return;
       }
       if (selectedMembers.length === 0) {
@@ -864,19 +1031,24 @@
         return;
       }
 
+      const totalPrice = qty * unitPrice;
+
       bill.dishes.push({
         id: 'd_' + Date.now(),
         name,
-        price,
+        qty,
+        unitPrice,
+        price: totalPrice,
         members: selectedMembers
       });
 
       nameInput.value = '';
+      qtyInput.value = '1';
       priceInput.value = '';
       toggleAllDishMembers(true);
       renderDishes();
       calculateSummary();
-      showToast(`เพิ่ม "${name}" ลงใน ${bill.name} แล้ว`, 'success');
+      showToast(`เพิ่ม "${name}" (${qty} จาน) แล้ว`, 'success');
     }
 
     function removeDish(dishId) {
@@ -884,7 +1056,7 @@
       bill.dishes = bill.dishes.filter(d => d.id !== dishId);
       renderDishes();
       calculateSummary();
-      showToast('ลบรายการอาหารแล้ว', 'info');
+      showToast('ลบรายการอาหารเรียบร้อยแล้ว', 'info');
     }
 
     function renderDishes() {
@@ -900,189 +1072,159 @@
 
       if (bill.dishes.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400 text-xs">ยังไม่มีรายการอาหารในร้านนี้</td></tr>';
-        mobileList.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs bg-slate-50 rounded-xl border border-slate-200">ยังไม่มีรายการอาหารในร้านนี้</div>';
+        mobileList.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs bg-slate-50/80 rounded-2xl border border-slate-200/60">ยังไม่มีรายการอาหารในร้านนี้</div>';
         return;
       }
 
-      tbody.innerHTML = bill.dishes.map(d => `
-        <tr class="hover:bg-slate-50 transition">
-          <td class="p-3 font-semibold text-slate-800">${escapeHtml(d.name)}</td>
-          <td class="p-3 text-right font-mono font-medium text-slate-700">${d.price.toFixed(2)} บ.</td>
-          <td class="p-3">
-            <div class="flex flex-wrap gap-1">
-              ${d.members.map(m => `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[11px]">${escapeHtml(m)}</span>`).join('')}
-            </div>
-          </td>
-          <td class="p-3 text-center">
-            <button type="button" onclick="removeDish('${d.id}')" class="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-            </button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = bill.dishes.map(d => {
+        const qtyText = d.qty && d.qty > 1 ? `<span class="text-[11px] text-slate-400 font-normal ml-1">(${d.qty} x ${(d.unitPrice || (d.price / d.qty)).toFixed(2)} บ.)</span>` : '';
+        return `
+          <tr class="hover:bg-slate-50/80 transition-all">
+            <td class="p-3.5 pl-4 font-bold text-slate-800">${escapeHtml(d.name)} ${qtyText}</td>
+            <td class="p-3.5 text-right font-mono font-bold text-indigo-600 text-sm">${d.price.toFixed(2)} บ.</td>
+            <td class="p-3.5">
+              <div class="flex flex-wrap gap-1">
+                ${d.members.map(m => `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 font-medium rounded-lg text-[11px] border border-slate-200/50">${escapeHtml(m)}</span>`).join('')}
+              </div>
+            </td>
+            <td class="p-3.5 text-center">
+              <button type="button" onclick="removeDish('${d.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
 
-      mobileList.innerHTML = bill.dishes.map(d => `
-        <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="font-bold text-slate-800 text-sm">${escapeHtml(d.name)}</span>
-              <span class="block text-emerald-600 font-mono font-bold text-sm">${d.price.toFixed(2)} บาท</span>
+      mobileList.innerHTML = bill.dishes.map(d => {
+        const qtyText = d.qty && d.qty > 1 ? `<span class="text-xs text-slate-400 font-normal ml-1">(${d.qty} x ${(d.unitPrice || (d.price / d.qty)).toFixed(2)} บ.)</span>` : '';
+        return `
+          <div class="p-3.5 bg-white border border-slate-200/70 rounded-2xl space-y-2 shadow-2xs">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="font-bold text-slate-800 text-sm block">${escapeHtml(d.name)} ${qtyText}</span>
+                <span class="text-indigo-600 font-mono font-bold text-sm">${d.price.toFixed(2)} บาท</span>
+              </div>
+              <button type="button" onclick="removeDish('${d.id}')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg active:scale-95 text-xs font-semibold">ลบ</button>
             </div>
-            <button type="button" onclick="removeDish('${d.id}')" class="text-slate-400 hover:text-red-500 p-1 text-xs">ลบ</button>
+            <div class="flex flex-wrap gap-1 text-[11px] text-slate-500 border-t border-slate-100 pt-2">
+              <span class="text-slate-400 font-medium">คนแชร์:</span>
+              ${d.members.map(m => `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 font-medium rounded-md">${escapeHtml(m)}</span>`).join('')}
+            </div>
           </div>
-          <div class="flex flex-wrap gap-1 text-[11px] text-slate-500 border-t border-slate-100 pt-1.5">
-            <span class="text-slate-400">คนแชร์:</span>
-            ${d.members.map(m => `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded">${escapeHtml(m)}</span>`).join('')}
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    function setDiscountType(type, trigger = true) {
-      const bill = getActiveBill();
-      bill.discountType = type;
-      const btnBaht = document.getElementById('btnDiscBaht');
-      const btnPercent = document.getElementById('btnDiscPercent');
-      const unitLabel = document.getElementById('discountUnitLabel');
-      const input = document.getElementById('discountInput');
+    function setRoundingMode(mode) {
+      roundingMode = mode;
+      const bExact = document.getElementById('btnRoundExact');
+      const bCeil1 = document.getElementById('btnRoundCeil1');
+      const bNear5 = document.getElementById('btnRoundNearest5');
 
-      if (type === 'percent') {
-        btnPercent.className = 'px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-xs transition';
-        btnBaht.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
-        unitLabel.innerText = '%';
-        input.placeholder = 'เช่น 10 หรือ 15';
+      [bExact, bCeil1, bNear5].forEach(b => {
+        b.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+      });
+
+      if (mode === 'ceil1') {
+        bCeil1.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-white text-indigo-700 font-bold shadow-2xs transition-all';
+      } else if (mode === 'nearest5') {
+        bNear5.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-white text-indigo-700 font-bold shadow-2xs transition-all';
       } else {
-        btnBaht.className = 'px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-xs transition';
-        btnPercent.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
-        unitLabel.innerText = 'บาท';
-        input.placeholder = 'เช่น 100 หรือ 50';
+        bExact.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg bg-white text-indigo-700 font-bold shadow-2xs transition-all';
       }
-      if (trigger) triggerAutoRecalculate();
-    }
 
-    function onBillTaxDiscountChanged() {
-      const bill = getActiveBill();
-      bill.hasSC = document.getElementById('scCheck').checked;
-      bill.hasVAT = document.getElementById('vatCheck').checked;
-      
-      const scVal = parseFloat(document.getElementById('scRateInput').value);
-      bill.scRate = isNaN(scVal) || scVal < 0 ? 10 : scVal;
-
-      const vatVal = parseFloat(document.getElementById('vatRateInput').value);
-      bill.vatRate = isNaN(vatVal) || vatVal < 0 ? 7 : vatVal;
-
-      bill.discountVal = parseFloat(document.getElementById('discountInput').value) || 0;
-      triggerAutoRecalculate();
-    }
-
-    function triggerAutoRecalculate() {
       calculateSummary();
-    }
-
-    function calculateBillData(bill) {
-      const rawSubtotal = bill.dishes.reduce((sum, d) => sum + d.price, 0);
-      let discountVal = 0;
-
-      if (bill.discountType === 'percent') {
-        const pct = Math.max(0, Math.min(100, bill.discountVal || 0));
-        discountVal = (rawSubtotal * pct) / 100;
-      } else {
-        discountVal = Math.min(rawSubtotal, Math.max(0, bill.discountVal || 0));
-      }
-
-      const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountVal);
-      const scPercent = (bill.scRate !== undefined && !isNaN(bill.scRate)) ? bill.scRate : 10;
-      const vatPercent = (bill.vatRate !== undefined && !isNaN(bill.vatRate)) ? bill.vatRate : 7;
-
-      const scAmount = bill.hasSC ? subtotalAfterDiscount * (scPercent / 100) : 0;
-      const vatAmount = bill.hasVAT ? (subtotalAfterDiscount + scAmount) * (vatPercent / 100) : 0;
-      const grandTotal = subtotalAfterDiscount + scAmount + vatAmount;
-
-      const memberShares = {};
-      friends.forEach(f => memberShares[f] = 0);
-
-      bill.dishes.forEach(d => {
-        if (d.members.length > 0) {
-          const split = d.price / d.members.length;
-          d.members.forEach(m => {
-            if (memberShares[m] !== undefined) {
-              memberShares[m] += split;
-            }
-          });
-        }
-      });
-
-      const memberFinals = {};
-      friends.forEach(f => {
-        const rawShare = memberShares[f];
-        const ratio = rawSubtotal > 0 ? (rawShare / rawSubtotal) : 0;
-        const myDiscount = discountVal * ratio;
-        const myAfterDisc = Math.max(0, rawShare - myDiscount);
-        const mySC = bill.hasSC ? (myAfterDisc * (scPercent / 100)) : 0;
-        const myVAT = bill.hasVAT ? ((myAfterDisc + mySC) * (vatPercent / 100)) : 0;
-        const myFinal = myAfterDisc + mySC + myVAT;
-
-        memberFinals[f] = {
-          raw: rawShare,
-          discount: myDiscount,
-          sc: mySC,
-          vat: myVAT,
-          finalAmount: myFinal
-        };
-      });
-
-      return {
-        rawSubtotal,
-        discountVal,
-        scAmount,
-        vatAmount,
-        scPercent,
-        vatPercent,
-        grandTotal,
-        memberFinals
-      };
+      showToast(`เปลี่ยนการปัดเศษเป็น: ${mode === 'ceil1' ? 'ปัดขึ้นเต็มบาท' : mode === 'nearest5' ? 'ปัดเป็น 5 บาท' : 'เป๊ะทุกสตางค์'}`, 'info');
     }
 
     function calculateSummary() {
-      if (friends.length === 0) {
-        document.getElementById('resultSection').classList.add('hidden');
-        return;
-      }
-
-      let grandTotalAllBills = 0;
+      const allFriends = [...friends];
       const memberGrandTotals = {};
-      const memberPaidTotals = {}; // how much each friend paid out of pocket
-      friends.forEach(f => {
+      const memberPaidTotals = {};
+      const netBalances = {};
+
+      allFriends.forEach(f => {
         memberGrandTotals[f] = 0;
         memberPaidTotals[f] = 0;
+        netBalances[f] = 0;
       });
 
-      const billCalculatedList = bills.map(bill => {
-        const calc = calculateBillData(bill);
-        grandTotalAllBills += calc.grandTotal;
+      let grandTotalAllBills = 0;
+      const billCalculatedList = [];
 
-        // Add to payer's credit
-        if (bill.payer && memberPaidTotals[bill.payer] !== undefined) {
-          memberPaidTotals[bill.payer] += calc.grandTotal;
-        }
+      bills.forEach(bill => {
+        const rawSubtotal = bill.dishes.reduce((sum, d) => sum + d.price, 0);
+        const memberRaws = {};
+        allFriends.forEach(f => memberRaws[f] = 0);
 
-        // Add to each member's debt
-        Object.entries(calc.memberFinals).forEach(([name, data]) => {
-          if (memberGrandTotals[name] !== undefined) {
-            memberGrandTotals[name] += data.finalAmount;
+        bill.dishes.forEach(d => {
+          const count = d.members.length;
+          if (count > 0) {
+            const perPerson = d.price / count;
+            d.members.forEach(m => {
+              memberRaws[m] = (memberRaws[m] || 0) + perPerson;
+            });
           }
         });
 
-        return { bill, calc };
+        let discountBaht = 0;
+        if (bill.discountType === 'percent') {
+          discountBaht = (rawSubtotal * Math.min(bill.discountVal || 0, 100)) / 100;
+        } else {
+          discountBaht = Math.min(bill.discountVal || 0, rawSubtotal);
+        }
+
+        const discountRatio = rawSubtotal > 0 ? discountBaht / rawSubtotal : 0;
+        const scRate = bill.hasSC ? ((bill.scRate || 0) / 100) : 0;
+        const vatRate = bill.hasVAT ? ((bill.vatRate || 0) / 100) : 0;
+
+        const memberFinals = {};
+        let billTotal = 0;
+
+        allFriends.forEach(m => {
+          const raw = memberRaws[m] || 0;
+          const disc = raw * discountRatio;
+          const afterDisc = Math.max(0, raw - disc);
+          const sc = afterDisc * scRate;
+          const afterSC = afterDisc + sc;
+          const vat = afterSC * vatRate;
+          const finalAmt = applyRounding(afterSC + vat);
+
+          memberFinals[m] = {
+            raw,
+            discount: disc,
+            sc,
+            vat,
+            finalAmount: finalAmt
+          };
+
+          memberGrandTotals[m] = (memberGrandTotals[m] || 0) + finalAmt;
+          billTotal += finalAmt;
+        });
+
+        if (bill.payer) {
+          memberPaidTotals[bill.payer] = (memberPaidTotals[bill.payer] || 0) + billTotal;
+        }
+
+        grandTotalAllBills += billTotal;
+        billCalculatedList.push({
+          bill,
+          calc: {
+            rawSubtotal,
+            discountBaht,
+            grandTotal: billTotal,
+            memberFinals
+          }
+        });
       });
 
-      // Compute Net Balances: (Paid - Owed). Positive = receiver, Negative = debtor
-      const netBalances = {};
-      friends.forEach(f => {
-        netBalances[f] = (memberPaidTotals[f] || 0) - (memberGrandTotals[f] || 0);
+      allFriends.forEach(m => {
+        const owed = memberGrandTotals[m] || 0;
+        const paid = memberPaidTotals[m] || 0;
+        netBalances[m] = paid - owed;
       });
 
-      // Calculate simplified smart transfers
       const settlements = computeSettlements(netBalances);
 
       calculatedGrandData = {
@@ -1094,31 +1236,61 @@
         settlements
       };
 
-      // Update Top Summary UI
-      document.getElementById('grandTotalDisplay').innerHTML = `${grandTotalAllBills.toFixed(2)} <span class="text-lg font-normal text-white">บาท</span>`;
-      document.getElementById('mobileBarTotal').innerText = grandTotalAllBills.toFixed(2) + ' บาท';
-
-      const activeBillData = billCalculatedList.find(b => b.bill.id === activeBillId);
-      if (activeBillData) {
-        document.getElementById('currentBillTotalMini').innerText = activeBillData.calc.grandTotal.toFixed(2);
+      const grandTotalDisplay = document.getElementById('grandTotalDisplay');
+      if (grandTotalDisplay) {
+        grandTotalDisplay.innerHTML = `${grandTotalAllBills.toFixed(2)} <span class="text-lg font-normal text-slate-300">บาท</span>`;
       }
 
-      // Render breakdown pills
+      const mobileBarTotal = document.getElementById('mobileBarTotal');
+      if (mobileBarTotal) {
+        mobileBarTotal.innerText = `${grandTotalAllBills.toFixed(2)} บาท`;
+      }
+
+      const currentBillCalc = billCalculatedList.find(b => b.bill.id === activeBillId);
+      const miniEl = document.getElementById('currentBillTotalMini');
+      if (miniEl && currentBillCalc) {
+        miniEl.innerText = currentBillCalc.calc.grandTotal.toFixed(2);
+      }
+
       const pillsContainer = document.getElementById('shopsBreakdownPills');
-      pillsContainer.innerHTML = billCalculatedList.map(({ bill, calc }) => `
-        <span class="px-2.5 py-1 rounded-lg bg-white/10 text-slate-200 border border-white/10 flex items-center gap-1">
-          <b>${escapeHtml(bill.name)}:</b> ${calc.grandTotal.toFixed(2)} บ. 
-          <span class="text-[11px] text-emerald-300">(${escapeHtml(bill.payer || 'ไม่มีคนจ่าย')})</span>
-        </span>
-      `).join('');
+      if (pillsContainer) {
+        pillsContainer.innerHTML = billCalculatedList.map(({ bill, calc }) => `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 text-white rounded-lg font-medium border border-white/10">
+            <span>${escapeHtml(bill.name)}:</span>
+            <b class="font-mono text-emerald-300 font-bold">${calc.grandTotal.toFixed(2)} บ.</b>
+            <span class="text-[10px] text-slate-300">(${escapeHtml(bill.payer || 'ยังไม่ระบุ')})</span>
+          </span>
+        `).join('');
+      }
+
+      const resultSec = document.getElementById('resultSection');
+      if (resultSec && allFriends.length > 0) {
+        resultSec.classList.remove('hidden');
+      }
 
       renderMemberGrandCards();
       renderSettlementTransfers();
-      renderCurrentBillResult();
-      document.getElementById('resultSection').classList.remove('hidden');
+      if (resultView === 'current') {
+        renderCurrentBillResult();
+      }
     }
 
-    // Smart Debt Resolution Algorithm (Minimizes transfer count)
+    function applyRounding(amount) {
+      if (amount <= 0) return 0;
+      if (roundingMode === 'ceil1') {
+        return Math.ceil(amount);
+      } else if (roundingMode === 'nearest5') {
+        return Math.round(amount / 5) * 5;
+      }
+      return Math.round(amount * 100) / 100;
+    }
+
+    function togglePaidStatus(friendName) {
+      paidStatus[friendName] = !paidStatus[friendName];
+      renderMemberGrandCards();
+      updatePaymentTrackerUI();
+    }
+
     function computeSettlements(balances) {
       const debtors = [];
       const creditors = [];
@@ -1139,10 +1311,9 @@
       while (i < debtors.length && j < creditors.length) {
         const debtor = debtors[i];
         const creditor = creditors[j];
-        const settleAmount = Math.min(debtor.amount, creditor.amount);
+        const settleAmount = applyRounding(Math.min(debtor.amount, creditor.amount));
 
         if (settleAmount > 0.05) {
-          // Find creditor's bill PromptPay info
           const creditorBill = bills.find(b => b.payer === creditor.name) || bills[0];
           transfers.push({
             from: debtor.name,
@@ -1166,37 +1337,51 @@
       const container = document.getElementById('memberGrandCardsGrid');
       if (!calculatedGrandData) return;
 
-      container.innerHTML = Object.entries(calculatedGrandData.memberGrandTotals).map(([name, totalOwed]) => {
+      container.innerHTML = Object.entries(calculatedGrandData.memberGrandTotals).map(([name, totalOwed], idx) => {
         const paid = calculatedGrandData.memberPaidTotals[name] || 0;
         const net = calculatedGrandData.netBalances[name] || 0;
+        const pal = friendColorPalettes[idx % friendColorPalettes.length];
+        const initial = name.charAt(0).toUpperCase();
+        const isPaid = !!paidStatus[name];
 
         let statusBadge = '';
         if (net > 0.05) {
-          statusBadge = `<span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg">รับคืน +${net.toFixed(2)} บ.</span>`;
+          statusBadge = `<span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-xl">รับคืน +${net.toFixed(2)} บ.</span>`;
         } else if (net < -0.05) {
-          statusBadge = `<span class="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg">ต้องโอน ${Math.abs(net).toFixed(2)} บ.</span>`;
+          const paidBtnClass = isPaid 
+            ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-2xs' 
+            : 'bg-rose-50 text-rose-700 font-bold border-rose-200 hover:bg-rose-100';
+          statusBadge = `
+            <button type="button" onclick="togglePaidStatus('${escapeHtml(name)}')" 
+                    class="px-2.5 py-1 text-xs rounded-xl border transition-all active:scale-95 flex items-center gap-1 ${paidBtnClass}">
+              <span>${isPaid ? 'โอนแล้ว ✅' : 'ต้องโอน ' + Math.abs(net).toFixed(2) + ' บ. ⏳'}</span>
+            </button>
+          `;
         } else {
-          statusBadge = `<span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">ยอดพอดี (0.00 บ.)</span>`;
+          statusBadge = `<span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-xl">ยอดพอดี (0.00 บ.)</span>`;
         }
 
         return `
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2.5">
+          <div class="bg-white border ${isPaid ? 'border-emerald-300 ring-2 ring-emerald-500/10' : 'border-slate-200/70'} rounded-3xl p-4 sm:p-5 shadow-xs space-y-3 transition-all hover:shadow-sm">
             <div class="flex justify-between items-start">
-              <div>
-                <span class="text-xs text-slate-400 font-medium">สมาชิก</span>
-                <h4 class="text-base font-bold text-slate-900">${escapeHtml(name)}</h4>
+              <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl ${pal.badge} text-white font-black text-xs flex items-center justify-center shadow-2xs">${initial}</span>
+                <div>
+                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">สมาชิก</span>
+                  <h4 class="text-base font-bold text-slate-900 leading-tight">${escapeHtml(name)}</h4>
+                </div>
               </div>
               <div class="text-right">
                 ${statusBadge}
               </div>
             </div>
 
-            <div class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl space-y-1">
-              <div class="flex justify-between">
-                <span>ยอดที่กินรวมทุกร้าน:</span>
-                <b class="font-mono text-slate-900">${totalOwed.toFixed(2)} บ.</b>
+            <div class="text-xs text-slate-600 bg-slate-50/80 p-3 rounded-2xl border border-slate-200/50 space-y-1.5 font-medium">
+              <div class="flex justify-between items-center">
+                <span class="text-slate-500">ยอดที่กินรวมทุกร้าน:</span>
+                <b class="font-mono text-slate-900 text-sm font-bold">${totalOwed.toFixed(2)} บ.</b>
               </div>
-              <div class="flex justify-between text-slate-500">
+              <div class="flex justify-between items-center text-slate-400 text-[11px]">
                 <span>ยอดที่ออกเงินไปก่อน:</span>
                 <span class="font-mono">${paid.toFixed(2)} บ.</span>
               </div>
@@ -1204,144 +1389,198 @@
           </div>
         `;
       }).join('');
+
+      updatePaymentTrackerUI();
+    }
+
+    function updatePaymentTrackerUI() {
+      if (!calculatedGrandData) return;
+
+      const debtors = Object.entries(calculatedGrandData.netBalances).filter(([_, net]) => net < -0.05);
+      const totalDebtors = debtors.length;
+      const paidDebtors = debtors.filter(([name]) => !!paidStatus[name]).length;
+
+      let pendingAmount = 0;
+      debtors.forEach(([name, net]) => {
+        if (!paidStatus[name]) {
+          pendingAmount += Math.abs(net);
+        }
+      });
+
+      const pct = totalDebtors > 0 ? (paidDebtors / totalDebtors) * 100 : 100;
+
+      const trackerStatus = document.getElementById('trackerStatusText');
+      const trackerPending = document.getElementById('trackerPendingAmount');
+      const trackerBar = document.getElementById('trackerProgressBar');
+
+      if (trackerStatus) trackerStatus.innerText = `โอนแล้ว ${paidDebtors}/${totalDebtors} คน`;
+      if (trackerPending) trackerPending.innerText = `${pendingAmount.toFixed(2)} บ.`;
+      if (trackerBar) trackerBar.style.width = `${pct}%`;
+    }
+
+    function copyPendingReminder() {
+      if (!calculatedGrandData) return;
+
+      const debtors = Object.entries(calculatedGrandData.netBalances).filter(([_, net]) => net < -0.05);
+      const unpaid = debtors.filter(([name]) => !paidStatus[name]);
+
+      if (unpaid.length === 0) {
+        showToast('ทุกคนโอนเงินครบเรียบร้อยแล้ว เยี่ยมมาก! 🎉', 'success');
+        return;
+      }
+
+      let text = `📢 แจ้งเตือนยอดค้างโอนค่าอาหาร 🍜\n`;
+      text += `========================\n`;
+      unpaid.forEach(([name, net]) => {
+        text += `👉 ${name}: ${Math.abs(net).toFixed(2)} บาท\n`;
+      });
+      text += `------------------------\n`;
+      text += `รบกวนโอนแล้วส่งสลิปให้ด้วยน้า ขอบคุณครับ/ค่ะ 🙏`;
+
+      copyToClipboard(text);
+      showToast('คัดลอกข้อความทวงเงิน (เฉพาะคนที่ยังไม่โอน) แล้ว!', 'success');
     }
 
     function renderSettlementTransfers() {
       const container = document.getElementById('settlementTransfersList');
       if (!calculatedGrandData || calculatedGrandData.settlements.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">ไม่มีรายการที่ต้องโอนเงิน (ยอดหักล้างกันพอดี)</p>';
+        container.innerHTML = '<div class="text-xs text-slate-400 italic py-2 text-center">ไม่มีรายการโอนเงินค้าง (ยอดเงินสุทธิลงตัวพอดี)</div>';
         return;
       }
 
-      container.innerHTML = calculatedGrandData.settlements.map((t, idx) => `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 gap-2">
-          <div class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">${idx + 1}</span>
-            <div class="text-xs">
-              <span class="font-bold text-slate-900">${escapeHtml(t.from)}</span>
-              <span class="text-slate-400 mx-1">โอนให้</span>
-              <span class="font-bold text-emerald-700">${escapeHtml(t.to)}</span>
+      container.innerHTML = calculatedGrandData.settlements.map(item => {
+        const hasQr = item.billRef && (item.billRef.promptpayId || item.billRef.customQrUrl);
+        return `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/60 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-800 text-sm">${escapeHtml(item.from)}</span>
+              <span class="text-slate-400">โอนให้ 👉</span>
+              <span class="font-bold text-indigo-700 text-sm">${escapeHtml(item.to)}</span>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-3">
+              <span class="font-mono font-bold text-base text-slate-900">${item.amount.toFixed(2)} <span class="text-xs font-normal text-slate-500">บาท</span></span>
+              <button type="button" onclick="openTransferQrModal('${escapeHtml(item.to)}', ${item.amount}, '${item.billRef ? item.billRef.id : ''}')" 
+                      class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1 shadow-xs shadow-indigo-600/20">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                <span>${hasQr ? 'ดู QR โอน' : 'ดูยอดโอน'}</span>
+              </button>
             </div>
           </div>
-          <div class="flex items-center justify-between sm:justify-end gap-3 pt-1 sm:pt-0">
-            <span class="text-sm font-black text-blue-700 font-mono">${t.amount.toFixed(2)} บ.</span>
-            <button type="button" onclick="openQrForSettlement('${escapeHtml(t.to)}', ${t.amount})" 
-                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs transition flex items-center gap-1 active:scale-95">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-              <span>ดู QR โอน</span>
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     function renderCurrentBillResult() {
-      const activeObj = calculatedGrandData?.billCalculatedList.find(b => b.bill.id === activeBillId);
-      if (!activeObj) return;
+      const bill = getActiveBill();
+      const titleEl = document.getElementById('currentBillResultTitle');
+      const payerEl = document.getElementById('currentBillResultPayerTag');
+      const grid = document.getElementById('memberCurrentBillCardsGrid');
 
-      const bill = activeObj.bill;
-      const calc = activeObj.calc;
+      if (titleEl) titleEl.innerText = bill.name;
+      if (payerEl) payerEl.innerText = `คนจ่าย: ${bill.payer || 'ยังไม่ระบุ'}`;
 
-      document.getElementById('currentBillResultTitle').innerText = bill.name;
-      document.getElementById('currentBillResultPayerTag').innerText = `คนสำรองจ่าย: ${bill.payer || 'ไม่มี'}`;
+      if (!calculatedGrandData) return;
+      const billCalc = calculatedGrandData.billCalculatedList.find(b => b.bill.id === activeBillId);
+      if (!billCalc) return;
 
-      const container = document.getElementById('memberCurrentBillCardsGrid');
-      container.innerHTML = Object.entries(calc.memberFinals).map(([name, data]) => `
-        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2.5">
-          <div class="flex justify-between items-start">
-            <h4 class="text-base font-bold text-slate-900">${escapeHtml(name)}</h4>
-            <span class="text-lg font-black text-blue-700 font-mono">${data.finalAmount.toFixed(2)} บ.</span>
+      grid.innerHTML = Object.entries(billCalc.calc.memberFinals).map(([name, data], idx) => {
+        const pal = friendColorPalettes[idx % friendColorPalettes.length];
+        const initial = name.charAt(0).toUpperCase();
+
+        return `
+          <div class="bg-white border border-slate-200/70 rounded-3xl p-4 space-y-2.5 shadow-2xs">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-lg ${pal.badge} text-white font-bold text-[11px] flex items-center justify-center">${initial}</span>
+                <span class="font-bold text-slate-800 text-sm">${escapeHtml(name)}</span>
+              </div>
+              <span class="font-mono font-bold text-indigo-600 text-base">${data.finalAmount.toFixed(2)} บ.</span>
+            </div>
+            <div class="text-[11px] text-slate-400 space-y-0.5 border-t border-slate-100 pt-2 font-medium">
+              <div class="flex justify-between"><span>ค่าอาหารดิบ:</span> <span class="font-mono">${data.raw.toFixed(2)} บ.</span></div>
+              ${data.discount > 0 ? `<div class="flex justify-between text-emerald-600"><span>ส่วนลด:</span> <span class="font-mono">-${data.discount.toFixed(2)} บ.</span></div>` : ''}
+              ${data.sc > 0 ? `<div class="flex justify-between"><span>Service Charge:</span> <span class="font-mono">+${data.sc.toFixed(2)} บ.</span></div>` : ''}
+              ${data.vat > 0 ? `<div class="flex justify-between"><span>VAT:</span> <span class="font-mono">+${data.vat.toFixed(2)} บ.</span></div>` : ''}
+            </div>
           </div>
-          <div class="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl flex justify-between">
-            <span>ค่าอาหาร: ${data.raw.toFixed(2)} บ.</span>
-            <span>ลด: ${data.discount.toFixed(2)} บ.</span>
-            <span>SC+VAT: ${(data.sc + data.vat).toFixed(2)} บ.</span>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    function switchResultView(view) {
-      resultView = view;
-      const btnAll = document.getElementById('btnViewAllBills');
-      const btnCurrent = document.getElementById('btnViewCurrentBill');
-      const viewAll = document.getElementById('viewAllBillsSection');
-      const viewCurrent = document.getElementById('viewCurrentBillSection');
+    function switchResultView(mode) {
+      resultView = mode;
+      const bAll = document.getElementById('btnViewAllBills');
+      const bCur = document.getElementById('btnViewCurrentBill');
+      const secAll = document.getElementById('viewAllBillsSection');
+      const secCur = document.getElementById('viewCurrentBillSection');
 
-      if (view === 'current') {
-        btnCurrent.className = 'px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-xs transition';
-        btnAll.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
-        viewAll.classList.add('hidden');
-        viewCurrent.classList.remove('hidden');
+      if (mode === 'current') {
+        bCur.className = 'px-3.5 py-2 rounded-xl bg-white text-indigo-700 shadow-2xs transition-all flex items-center gap-1.5';
+        bAll.className = 'px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
+        secAll.classList.add('hidden');
+        secCur.classList.remove('hidden');
         renderCurrentBillResult();
       } else {
-        btnAll.className = 'px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-xs transition';
-        btnCurrent.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
-        viewCurrent.classList.add('hidden');
-        viewAll.classList.remove('hidden');
+        bAll.className = 'px-3.5 py-2 rounded-xl bg-white text-indigo-700 shadow-2xs transition-all flex items-center gap-1.5';
+        bCur.className = 'px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
+        secCur.classList.add('hidden');
+        secAll.classList.remove('hidden');
       }
     }
 
-    function openQrForSettlement(payerName, amount) {
-      // Find the payer's bill or PromptPay configuration
-      const payerBill = bills.find(b => b.payer === payerName && (b.promptpayId || b.customQrUrl)) || bills.find(b => b.payer === payerName) || getActiveBill();
-      openModalWithDetails(payerName, payerBill.promptpayId || '', payerBill.accountNote || '', payerBill.customQrUrl, payerBill.qrMode, amount);
-    }
+    let currentModalAmountVal = 0;
 
-    function openModalWithDetails(receiverName, ppTarget, accountNote, customQrUrl, mode, amount) {
-      const qrTargetEl = document.getElementById('qrCodeTarget');
-      const customImgEl = document.getElementById('customQrModalImg');
+    function openTransferQrModal(receiverName, amount, billId) {
+      const bill = bills.find(b => b.id === billId) || bills.find(b => b.payer === receiverName) || getActiveBill();
+      const modal = document.getElementById('qrModal');
+      const targetDiv = document.getElementById('qrCodeTarget');
+      const customImg = document.getElementById('customQrModalImg');
       const subtitleEl = document.getElementById('modalQrSubtitle');
-      const noticeTextEl = document.getElementById('modalNoticeText');
+      const noticeEl = document.getElementById('modalNoticeText');
 
-      document.getElementById('modalReceiverName').innerText = receiverName || 'ผู้สำรองจ่าย';
-      document.getElementById('modalPayAmount').innerText = amount.toFixed(2) + ' บาท';
+      currentModalAmountVal = amount;
+      document.getElementById('modalReceiverName').innerText = receiverName || bill.payer || '-';
+      document.getElementById('modalPayAmount').innerText = `${amount.toFixed(2)} บาท`;
 
-      if (mode === 'upload' && customQrUrl) {
-        document.getElementById('modalPromptPayId').innerText = accountNote || 'พร้อมเพย์ส่วนตัว';
-        subtitleEl.innerText = `สแกน QR Code ของ ${receiverName}`;
-        noticeTextEl.innerText = 'สแกนรูป QR แล้วระบุยอดเงินตามที่แสดงด้านบน';
-        qrTargetEl.classList.add('hidden');
-        customImgEl.src = customQrUrl;
-        customImgEl.classList.remove('hidden');
-        document.getElementById('qrModal').classList.remove('hidden');
-        return;
+      targetDiv.innerHTML = '';
+
+      if (bill.qrMode === 'upload' && bill.customQrUrl) {
+        targetDiv.classList.add('hidden');
+        customImg.classList.remove('hidden');
+        customImg.src = bill.customQrUrl;
+        subtitleEl.innerText = 'สแกนจ่ายผ่านรูป QR Code ของคนรับเงิน';
+        noticeEl.innerText = bill.accountNote ? `ข้อมูลบัญชี: ${bill.accountNote}` : 'กรุณาใส่ยอดเงินตามที่ระบุด้านบนเมื่อสแกนจ่าย';
+        document.getElementById('modalPromptPayId').innerText = bill.accountNote || 'รูป QR ที่อัปโหลด';
+      } else if (bill.promptpayId) {
+        customImg.classList.add('hidden');
+        targetDiv.classList.remove('hidden');
+        document.getElementById('modalPromptPayId').innerText = bill.promptpayId;
+        subtitleEl.innerText = 'พร้อมเพย์ สแกนจ่ายด้วยทุกแอปธนาคาร';
+        noticeEl.innerText = 'สแกนด้วยแอปธนาคารบนมือถือ ยอดเงินจะขึ้นให้อัตโนมัติ';
+
+        const payload = generatePromptPayPayload(bill.promptpayId, amount);
+        if (payload && typeof QRCode !== 'undefined') {
+          new QRCode(targetDiv, {
+            text: payload,
+            width: 200,
+            height: 200,
+            colorDark: '#0f172a',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } else {
+          targetDiv.innerHTML = '<div class="text-xs text-rose-500 font-semibold p-4 text-center">เบอร์หรือเลขบัตรประชาชนไม่ถูกต้อง</div>';
+        }
+      } else {
+        customImg.classList.add('hidden');
+        targetDiv.classList.remove('hidden');
+        document.getElementById('modalPromptPayId').innerText = 'ยังไม่ได้ระบุพร้อมเพย์';
+        subtitleEl.innerText = 'ยอดเงินที่ต้องโอน';
+        noticeEl.innerText = 'ผู้รับเงินยังไม่ได้ตั้งค่าพร้อมเพย์หรือรูป QR ในข้อ 2';
+        targetDiv.innerHTML = '<div class="text-xs text-slate-400 p-8 text-center">ไม่มี QR Code สำหรับยอดนี้</div>';
       }
 
-      if (!ppTarget) {
-        showToast(`ยังไม่ได้ใส่เลขพร้อมเพย์ของ "${receiverName}" กรุณากรอกในข้อ 2`, 'warning');
-        return;
-      }
-
-      const payload = generatePromptPayPayload(ppTarget, amount);
-      if (!payload) {
-        showToast('เลขพร้อมเพย์ไม่ถูกต้อง (ต้องเป็นเบอร์ 10 หลัก หรือบัตร ปชช. 13 หลัก)', 'warning');
-        return;
-      }
-
-      document.getElementById('modalPromptPayId').innerText = ppTarget;
-      subtitleEl.innerText = 'พร้อมเพย์ สแกนจ่ายด้วยทุกแอปธนาคาร';
-      noticeTextEl.innerText = 'สแกนด้วยแอปธนาคารบนมือถือ ยอดเงินจะขึ้นให้อัตโนมัติ';
-
-      customImgEl.classList.add('hidden');
-      qrTargetEl.classList.remove('hidden');
-      qrTargetEl.innerHTML = '';
-
-      try {
-        qrInstance = new QRCode(qrTargetEl, {
-          text: payload,
-          width: 190,
-          height: 190,
-          colorDark: "#0f172a",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      } catch (err) {
-        showToast('ไม่สามารถสร้าง QR Code ได้', 'warning');
-        return;
-      }
-
-      document.getElementById('qrModal').classList.remove('hidden');
+      modal.classList.remove('hidden');
     }
 
     function closeQrModal() {
@@ -1349,48 +1588,44 @@
     }
 
     function copyModalAmount() {
-      const amountText = document.getElementById('modalPayAmount').innerText.replace(' บาท', '').trim();
-      copyToClipboard(amountText);
-      showToast('คัดลอกยอดเงิน ' + amountText + ' บาทแล้ว', 'success');
+      copyToClipboard(currentModalAmountVal.toFixed(2));
+      showToast(`คัดลอกยอด ${currentModalAmountVal.toFixed(2)} บาท เรียบร้อยแล้ว`, 'success');
     }
 
     function copyLineSummary() {
-      if (!calculatedGrandData) return;
+      if (!calculatedGrandData) {
+        showToast('กรุณากดคำนวณก่อนคัดลอก', 'warning');
+        return;
+      }
 
-      let text = `🎉 สรุปยอดหารค่าอาหาร (แยกตามร้าน)\n`;
-      text += `========================\n`;
+      let text = `🧾 สรุปยอดหารค่าอาหาร (${bills.length} ร้าน)\n`;
+      text += `ยอดรวมทั้งหมด: ${calculatedGrandData.grandTotalAllBills.toFixed(2)} บาท\n`;
+      text += `========================\n\n`;
 
+      text += `🏪 รายละเอียดยอดแต่ละร้าน:\n`;
       calculatedGrandData.billCalculatedList.forEach(({ bill, calc }, idx) => {
-        text += `🏪 ร้านที่ ${idx + 1}: ${bill.name}\n`;
-        text += `• ยอดรวมร้านนี้: ${calc.grandTotal.toFixed(2)} บาท\n`;
-        if (bill.hasSC || bill.hasVAT) {
-          const taxes = [];
-          if (bill.hasSC) taxes.push(`SC ${calc.scPercent}%`);
-          if (bill.hasVAT) taxes.push(`VAT ${calc.vatPercent}%`);
-          text += `• ภาษี/บริการ: ${taxes.join(', ')}\n`;
-        }
-        text += `• คนสำรองจ่าย: ${bill.payer || '-'}`;
-        if (bill.promptpayId) text += ` (พร้อมเพย์: ${bill.promptpayId})`;
-        text += `\n------------------------\n`;
+        text += `${idx + 1}. ${bill.name}: ${calc.grandTotal.toFixed(2)} บ. (คนจ่าย: ${bill.payer || '-'})\n`;
       });
-
-      text += `\n👥 ยอดที่เพื่อนแต่ละคนกินรวมทั้งวัน:\n`;
+      text += `\n------------------------\n`;
+      text += `👥 ยอดที่แต่ละคนต้องจ่าย (ตามที่กินจริง):\n`;
       Object.entries(calculatedGrandData.memberGrandTotals).forEach(([name, total]) => {
-        text += `• ${name}: ${total.toFixed(2)} บาท\n`;
+        text += `• ${name}: ${total.toFixed(2)} บ.\n`;
       });
 
       if (calculatedGrandData.settlements.length > 0) {
-        text += `\n💸 สรุปการโอนเงินสุทธิ (หักลบยอดให้แล้ว):\n`;
-        calculatedGrandData.settlements.forEach((s) => {
-          text += `👉 ${s.from} โอนให้ ${s.to} = ${s.amount.toFixed(2)} บาท\n`;
+        text += `\n------------------------\n`;
+        text += `💸 สรุปการโอนเงินสุทธิ (หักลบให้แล้ว):\n`;
+        calculatedGrandData.settlements.forEach(item => {
+          const pp = item.billRef && item.billRef.promptpayId ? ` (พร้อมเพย์: ${item.billRef.promptpayId})` : '';
+          text += `👉 ${item.from} โอนให้ ${item.to} = ${item.amount.toFixed(2)} บ.${pp}\n`;
         });
       }
 
-      text += `\n💰 ยอดรวมทั้งสิ้น: ${calculatedGrandData.grandTotalAllBills.toFixed(2)} บาท\n`;
-      text += `ขอบคุณทุกคนมากๆ ครับ/ค่ะ 🙏`;
+      text += `\n========================\n`;
+      text += `โอนแล้วส่งสลิปมาในกลุ่มได้เลยน้า ขอบคุณทุกคนมากครับ/ค่ะ 🙏✨`;
 
       copyToClipboard(text);
-      showToast('คัดลอกสรุปทุกร้านสำหรับส่ง LINE แล้ว!', 'success');
+      showToast('คัดลอกสรุปสำหรับส่งใน LINE เรียบร้อยแล้ว! 📋', 'success');
     }
 
     function generatePromptPayPayload(target, amount) {
@@ -1467,6 +1702,7 @@
         }
       ];
       activeBillId = bills[0].id;
+      paidStatus = {};
       renderFriendsBadgeList();
       renderBillTabs();
       loadActiveBillForm();
