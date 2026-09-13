@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PromptPay Bill Splitter - หารค่าอาหารพร้อมเพย์</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- QRCode.js Library for EMVCo QR code generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* Prevent iOS input zoom and styling enhancements */
+    input, select, textarea, button {
+      font-size: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (min-width: 640px) {
+      input, select, textarea {
+        font-size: 0.875rem; /* 14px */
+      }
+    }
+    /* Safe Area Padding for iPhone X+ */
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 1rem);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-24 sm:pb-12 font-sans selection:bg-blue-100 selection:text-blue-800">
+
+  <!-- Header Bar -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-3xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black shadow-sm text-lg">
+          ฿
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">PromptPay Bill Splitter</h1>
+          <p class="text-xs text-slate-500">หารค่าอาหาร แยกบิลหลายร้าน พร้อมเพย์ QR Code</p>
+        </div>
+      </div>
+      <button type="button" onclick="resetAllData()" class="px-2.5 py-1.5 sm:px-3 text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition flex items-center gap-1 border border-slate-200">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span>เริ่มใหม่</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-5">
+
+    <!-- Multi-Shop / Multi-Bill Tabs -->
+    <section class="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-slate-200 space-y-3">
+      <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🏪</span>
+          <div>
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">ร้านค้า / บิลทั้งหมด (<span id="totalBillsCount">1</span> ร้าน)</h2>
+            <p class="text-xs text-slate-400">สลับร้านเพื่อใส่เมนู หรือกดเพิ่มร้านใหม่ได้ไม่อั้น</p>
+          </div>
+        </div>
+        <button type="button" onclick="addNewBill()" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 active:scale-95 text-blue-700 font-semibold text-xs rounded-xl border border-blue-200 transition flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>+ เพิ่มร้าน / บิลใหม่</span>
+        </button>
+      </div>
+
+      <!-- Bill Tabs Bar -->
+      <div id="billTabsContainer" class="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar"></div>
+
+      <!-- Active Bill Quick Editor -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+        <div class="flex items-center gap-2 flex-1">
+          <label class="font-medium text-slate-600 whitespace-nowrap">ชื่อร้าน / บิลนี้:</label>
+          <input id="currentBillNameInput" type="text" oninput="updateCurrentBillName(this.value)" 
+                 placeholder="เช่น ร้านชาบู, คาเฟ่ของหวาน" 
+                 class="w-full max-w-xs px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex items-center gap-2 justify-end">
+          <span class="text-slate-500">ยอดรวมร้านนี้: <b id="currentBillTotalMini" class="font-mono text-emerald-600 font-bold">0.00</b> บ.</span>
+          <button type="button" id="btnDeleteCurrentBill" onclick="deleteCurrentBill()" class="px-2.5 py-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition border border-slate-200 flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            <span>ลบบิลนี้</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 1: Payee Account for Current Bill -->
+    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base">
+          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">1</div>
+          <div>
+            <h2 class="text-sm sm:text-base font-bold">คนสำรองจ่ายบิลร้านนี้ (Payer & PromptPay)</h2>
+            <p class="text-xs text-slate-400 font-normal">เลือกว่าใครเป็นคนจ่ายเงินร้านนี้ และใส่บัญชีรับเงินโอน</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick select payer from friends -->
+      <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200 space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-1">
+          <label class="text-xs font-semibold text-slate-600">ใครเป็นคนสำรองจ่ายร้านนี้?</label>
+          <span class="text-[11px] text-slate-400">แตะเพื่อเลือกเพื่อนในโต๊ะได้ทันที</span>
+        </div>
+        <div id="payerQuickSelectBadges" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <!-- QR Method Switcher Tabs -->
+      <div class="flex p-1 bg-slate-100 rounded-xl max-w-md">
+        <button type="button" id="tabModeAuto" onclick="switchQrInputMode('auto')" class="flex-1 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+          <span>สร้าง QR ระบุยอดอัตโนมัติ</span>
+        </button>
+        <button type="button" id="tabModeUpload" onclick="switchQrInputMode('upload')" class="flex-1 py-2 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>อัปโหลดรูป QR ของคนจ่าย</span>
+        </button>
+      </div>
+
+      <!-- Mode 1: Auto Dynamic QR (PromptPay Number) -->
+      <div id="sectionAutoQr" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1.5">
+            เบอร์โทร (10 หลัก) หรือ บัตร ปชช. (13 หลัก) ของคนจ่าย <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <input id="promptpayIdInput" type="tel" inputmode="numeric" placeholder="เช่น 0812345678" maxlength="13"
+                   oninput="updateCurrentBillPromptPay(this.value)"
+                   class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono transition">
+            <span class="absolute right-3 top-2.5 text-xs text-slate-400 pointer-events-none">พร้อมเพย์</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1.5">ชื่อผู้รับเงิน / คนจ่ายร้านนี้</label>
+          <input id="receiverNameInput" type="text" placeholder="เช่น นนท์" 
+                 oninput="updateCurrentBillPayer(this.value)"
+                 class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+        </div>
+      </div>
+
+      <!-- Mode 2: Upload Custom QR Image -->
+      <div id="sectionUploadQr" class="hidden space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">ชื่อผู้รับเงิน / คนจ่าย <span class="text-red-500">*</span></label>
+            <input id="receiverNameUploadInput" type="text" placeholder="เช่น นนท์" 
+                   oninput="updateCurrentBillPayer(this.value)"
+                   class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">เลขบัญชีหรือเบอร์ (ข้อความช่วยจำ)</label>
+            <input id="accountNoteInput" type="text" placeholder="เช่น กสิกร xxx-x-xxxxx-x หรือ 081-xxx-xxxx" 
+                   oninput="updateCurrentBillAccountNote(this.value)"
+                   class="w-full px-3.5 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition">
+          </div>
+        </div>
+
+        <div class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-4 text-center transition bg-slate-50/60">
+          <input id="qrImageFileInput" type="file" accept="image/*" class="hidden" onchange="handleQrFileUpload(event)">
+          
+          <div id="uploadPlaceholder" onclick="document.getElementById('qrImageFileInput').click()" class="cursor-pointer space-y-2 py-3">
+            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 mx-auto flex items-center justify-center">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            </div>
+            <div>
+              <span class="text-sm font-semibold text-blue-600 hover:underline">แตะเพื่อเลือกรูปภาพ QR Code</span>
+              <span class="text-slate-500 text-sm"> ของคนจ่ายร้านนี้</span>
+            </div>
+            <p class="text-xs text-slate-400">สลิปหรือ QR ธนาคาร (JPG, PNG)</p>
+          </div>
+
+          <div id="uploadPreviewContainer" class="hidden flex flex-col sm:flex-row items-center justify-center gap-4 py-2">
+            <div class="relative w-28 h-28 rounded-xl overflow-hidden border-2 border-emerald-500 shadow-md bg-white p-1">
+              <img id="customQrPreviewImg" src="" alt="Custom QR Preview" class="w-full h-full object-contain rounded-lg">
+            </div>
+            <div class="text-left space-y-1">
+              <p class="text-xs font-semibold text-emerald-700">✓ รูปภาพพร้อมใช้งานสำหรับบิลนี้</p>
+              <div class="flex gap-2 pt-1.5">
+                <button type="button" onclick="document.getElementById('qrImageFileInput').click()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50">เปลี่ยนรูป</button>
+                <button type="button" onclick="removeUploadedQrImage()" class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100">ลบรูป</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2: Friends List (Shared Across All Bills) -->
+    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-3.5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base">
+          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">2</div>
+          <div>
+            <h2 class="text-sm sm:text-base font-bold">รายชื่อเพื่อนร่วมตี้ (ใช้ร่วมกันทุกร้าน)</h2>
+            <p class="text-xs text-slate-400 font-normal">เพิ่มรายชื่อครั้งเดียว ใช้เลือกแชร์อาหารได้ทุกบิล</p>
+          </div>
+        </div>
+        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full"><span id="friendCountBadge">0</span> คน</span>
+      </div>
+
+      <div class="flex gap-2">
+        <input id="friendNameInput" type="text" placeholder="พิมพ์ชื่อเพื่อน เช่น นนท์, มินต์" 
+               onkeydown="if(event.key==='Enter') addFriend()"
+               class="flex-1 px-3.5 py-2.5 sm:py-2 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+        <button type="button" onclick="addFriend()" class="px-4 sm:px-5 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-medium rounded-xl text-sm transition shadow-xs">
+          + เพิ่มเพื่อน
+        </button>
+      </div>
+
+      <div id="friendsBadgeList" class="flex flex-wrap gap-2 pt-1 min-h-[36px]"></div>
+    </section>
+
+    <!-- STEP 3: Dishes Input for Active Bill -->
+    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base">
+          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">3</div>
+          <div>
+            <h2 class="text-sm sm:text-base font-bold">รายการอาหารของ: <span id="activeBillTitleHighlight" class="text-blue-600">ร้านที่ 1</span></h2>
+            <p class="text-xs text-slate-400 font-normal">ใส่เมนูและเลือกเพื่อนที่กินในร้านนี้</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3 bg-slate-50/70 p-3.5 sm:p-4 rounded-xl border border-slate-200">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-slate-600 mb-1">ชื่อเมนูอาหาร / เครื่องดื่ม</label>
+            <input id="dishNameInput" type="text" placeholder="เช่น ชาบูหมู, กาแฟลาเต้" 
+                   class="w-full px-3.5 py-2.5 sm:py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">ราคา (บาท)</label>
+            <input id="dishPriceInput" type="number" step="any" inputmode="decimal" placeholder="0.00" 
+                   class="w-full px-3.5 py-2.5 sm:py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-medium text-slate-600">ใครกินจานนี้บ้าง?</label>
+            <div class="flex gap-2">
+              <button type="button" onclick="toggleAllDishMembers(true)" class="text-xs text-blue-600 hover:underline">เลือกทุกคน</button>
+              <span class="text-slate-300 text-xs">|</span>
+              <button type="button" onclick="toggleAllDishMembers(false)" class="text-xs text-slate-500 hover:underline">ล้าง</button>
+            </div>
+          </div>
+          <div id="dishMembersCheckboxes" class="flex flex-wrap gap-2 text-sm"></div>
+        </div>
+
+        <button type="button" onclick="addDish()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl text-sm transition shadow-xs flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>เพิ่มรายการอาหารลงในร้านนี้</span>
+        </button>
+      </div>
+
+      <!-- Dishes Table & Mobile Cards -->
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-semibold text-slate-700">รายการในร้านนี้ (<span id="dishCountBadge">0</span>)</span>
+          <span class="text-xs font-medium text-slate-500">รวมค่าอาหารดิบ: <b id="subtotalRawText" class="text-slate-800 font-mono">0.00</b> บ.</span>
+        </div>
+        
+        <div id="dishesMobileList" class="block sm:hidden space-y-2"></div>
+
+        <div class="hidden sm:block overflow-x-auto border border-slate-200 rounded-xl">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-600 text-xs font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="p-3">เมนู</th>
+                <th class="p-3 text-right">ราคา</th>
+                <th class="p-3">คนแชร์</th>
+                <th class="p-3 text-center w-16">ลบ</th>
+              </tr>
+            </thead>
+            <tbody id="dishesTableBody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: Service Charge, VAT & Discount (Per Current Bill) -->
+    <section class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 space-y-4">
+      <div class="flex items-center gap-2.5 text-slate-800 font-semibold text-base border-b border-slate-100 pb-3">
+        <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs sm:text-sm">4</div>
+        <div>
+          <h2 class="text-sm sm:text-base font-bold">ค่าบริการ, ภาษี & ส่วนลด (ของร้านนี้)</h2>
+          <p class="text-xs text-slate-400 font-normal">แต่ละร้านคิด SC, VAT หรือส่วนลดแยกกันได้อย่างอิสระ</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Service Charge & VAT Checkboxes -->
+        <div class="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <span class="text-xs font-semibold text-slate-600 block">ภาษี & เซอร์วิสชาร์จ (Plus Plus)</span>
+          <label class="flex items-center gap-2.5 cursor-pointer text-sm font-medium text-slate-700">
+            <input type="checkbox" id="scCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+            <span>Service Charge 10%</span>
+          </label>
+          <label class="flex items-center gap-2.5 cursor-pointer text-sm font-medium text-slate-700">
+            <input type="checkbox" id="vatCheck" onchange="onBillTaxDiscountChanged()" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
+            <span>VAT 7%</span>
+          </label>
+        </div>
+
+        <!-- Discount Inputs with Switcher (% / ฿) -->
+        <div class="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-semibold text-slate-600">ส่วนลดร้านนี้</span>
+            <div class="inline-flex p-0.5 bg-slate-200 rounded-lg text-xs font-medium">
+              <button type="button" id="btnDiscBaht" onclick="setDiscountType('baht')" class="px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-xs transition">บาท (฿)</button>
+              <button type="button" id="btnDiscPercent" onclick="setDiscountType('percent')" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">เปอร์เซ็นต์ (%)</button>
+            </div>
+          </div>
+
+          <div class="relative">
+            <input id="discountInput" type="number" step="any" inputmode="decimal" placeholder="เช่น 100 หรือ 10" 
+                   oninput="onBillTaxDiscountChanged()"
+                   class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono transition pr-12">
+            <span id="discountUnitLabel" class="absolute right-3 top-2.5 text-xs font-bold text-slate-400 pointer-events-none">บาท</span>
+          </div>
+
+          <div id="discountPreviewNote" class="text-xs text-emerald-600 font-medium hidden">
+            <span>💡 ส่วนลด: <span id="discountPreviewText">0.00</span> บาท</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Calculate Button -->
+    <button type="button" onclick="calculateSummary()" class="w-full py-3.5 sm:py-4 bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-bold rounded-2xl transition shadow-lg flex items-center justify-center gap-2 text-base">
+      <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+      <span>คำนวณเงินสุทธิ & สร้างสรุปทุกร้าน</span>
+    </button>
+
+    <!-- STEP 5: Results Section (Multi-Bill Grand Total & Settlement) -->
+    <section id="resultSection" class="hidden space-y-4">
+      <!-- Grand Summary Card -->
+      <div class="bg-gradient-to-br from-slate-900 to-blue-950 text-white p-5 rounded-2xl shadow-md space-y-3">
+        <div class="flex justify-between items-baseline border-b border-white/10 pb-3">
+          <div>
+            <p class="text-xs text-slate-300 uppercase tracking-wider font-semibold">ยอดรวมทุกร้านทั้งวัน (Grand Total)</p>
+            <h3 id="grandTotalDisplay" class="text-3xl sm:text-4xl font-black text-emerald-400 mt-0.5">0.00 <span class="text-lg font-normal text-white">บาท</span></h3>
+          </div>
+          <button type="button" onclick="copyLineSummary()" class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5 active:scale-95">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.95.56 3.77 1.52 5.31L2.2 21.8l4.63-1.22C8.31 21.49 10.1 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.63 0-3.15-.47-4.44-1.29l-.32-.2-2.75.72.74-2.68-.21-.33C4.38 15.02 3.9 13.56 3.9 12c0-4.46 3.64-8.1 8.1-8.1s8.1 3.64 8.1 8.1-3.64 8.1-8.1 8.1z"/></svg>
+            <span>คัดลอกสรุปทุกร้านส่ง LINE</span>
+          </button>
+        </div>
+
+        <!-- Shops breakdown pills -->
+        <div class="space-y-1.5 pt-1">
+          <span class="text-xs text-slate-300 font-medium">ยอดแยกตามร้าน:</span>
+          <div id="shopsBreakdownPills" class="flex flex-wrap gap-2 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- Result View Switcher (All Bills vs Current Bill) -->
+      <div class="flex items-center justify-between">
+        <div class="inline-flex p-1 bg-slate-200 rounded-xl text-xs font-semibold">
+          <button type="button" id="btnViewAllBills" onclick="switchResultView('all')" class="px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-xs transition">
+            🌟 ยอดรวมสุทธิทุกร้าน (พร้อมสรุปการโอน)
+          </button>
+          <button type="button" id="btnViewCurrentBill" onclick="switchResultView('current')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            📋 เฉพาะร้านที่เลือก
+          </button>
+        </div>
+      </div>
+
+      <!-- VIEW A: All Bills Net Settlement (ใครโอนให้ใคร เท่าไหร่) -->
+      <div id="viewAllBillsSection" class="space-y-3">
+        <h3 class="text-sm font-bold text-slate-800">สรุปยอดรวมที่แต่ละคนต้องจ่าย (Net Total):</h3>
+        <div id="memberGrandCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
+
+        <!-- Settlement Transfer List -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+          <div class="flex items-center gap-2 border-b border-slate-100 pb-2">
+            <span class="text-base">💸</span>
+            <div>
+              <h4 class="text-xs sm:text-sm font-bold text-slate-900">รายการโอนเงินสุทธิ (Net Transfer Settlements)</h4>
+              <p class="text-[11px] text-slate-400">ระบบคำนวณหักลบระหว่างคนสำรองจ่ายให้แล้ว ไม่ต้องโอนซ้ำซ้อน</p>
+            </div>
+          </div>
+          <div id="settlementTransfersList" class="space-y-2.5"></div>
+        </div>
+      </div>
+
+      <!-- VIEW B: Current Bill Detailed Breakdown -->
+      <div id="viewCurrentBillSection" class="hidden space-y-3">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-bold text-slate-800">ยอดเฉพาะร้าน: <span id="currentBillResultTitle" class="text-blue-600">ร้านที่ 1</span></h3>
+          <span id="currentBillResultPayerTag" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">คนจ่าย: -</span>
+        </div>
+        <div id="memberCurrentBillCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Sticky Bottom Bar on Mobile -->
+  <div id="mobileStickyBar" class="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 flex items-center justify-between z-20 safe-bottom shadow-lg">
+    <div>
+      <span class="text-[11px] text-slate-500 block">ยอดรวมทั้งวัน (<span id="mobileBillsCount">1</span> ร้าน)</span>
+      <span id="mobileBarTotal" class="text-base font-black text-slate-900">0.00 บาท</span>
+    </div>
+    <div class="flex gap-2">
+      <button type="button" onclick="calculateSummary()" class="px-4 py-2 bg-blue-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs">
+        คำนวณ / อัปเดต
+      </button>
+    </div>
+  </div>
+
+  <!-- QR Code Modal Dialog -->
+  <div id="qrModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="fixed inset-0" onclick="closeQrModal()"></div>
+
+    <div class="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl z-10 space-y-4 max-h-[90vh] overflow-y-auto safe-bottom animate-in fade-in slide-in-from-bottom duration-200">
+      
+      <button type="button" onclick="closeQrModal()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <div class="flex flex-col items-center pt-2">
+        <div class="bg-[#003d6b] text-white px-4 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <span class="font-extrabold tracking-wider text-xs">THAI QR PAYMENT</span>
+        </div>
+        <p id="modalQrSubtitle" class="text-xs font-medium text-slate-400 mt-1">พร้อมเพย์ สแกนจ่ายด้วยทุกแอปธนาคาร</p>
+      </div>
+
+      <div class="p-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex justify-center items-center mx-auto w-fit shadow-inner min-w-[200px] min-h-[200px]">
+        <div id="qrCodeTarget" class="p-1 bg-white"></div>
+        <img id="customQrModalImg" src="" alt="PromptPay QR" class="max-w-[210px] max-h-[210px] object-contain hidden rounded-lg">
+      </div>
+
+      <div class="bg-slate-50 p-3.5 rounded-2xl space-y-1.5 text-sm">
+        <div class="flex justify-between text-xs text-slate-500">
+          <span>ผู้รับเงิน (คนสำรองจ่าย):</span>
+          <span id="modalReceiverName" class="font-semibold text-slate-800">-</span>
+        </div>
+        <div class="flex justify-between text-xs text-slate-500">
+          <span>พร้อมเพย์ / บัญชี:</span>
+          <span id="modalPromptPayId" class="font-mono text-slate-800">-</span>
+        </div>
+        <div class="border-t border-slate-200 pt-2 flex justify-between items-baseline">
+          <span class="text-xs text-slate-500">ยอดที่ต้องโอน:</span>
+          <span id="modalPayAmount" class="text-2xl font-black text-blue-700">0.00 บาท</span>
+        </div>
+      </div>
+
+      <div id="modalNoticeText" class="text-xs text-slate-400 text-center">
+        สแกนด้วยแอปธนาคารบนมือถือ ยอดเงินจะขึ้นให้อัตโนมัติ
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="copyModalAmount()" class="flex-1 py-2.5 bg-blue-50 text-blue-700 font-semibold text-xs rounded-xl hover:bg-blue-100 transition active:scale-95">
+          คัดลอกยอดเงิน
+        </button>
+        <button type="button" onclick="closeQrModal()" class="flex-1 py-2.5 bg-slate-900 text-white font-semibold text-xs rounded-xl hover:bg-slate-800 transition active:scale-95">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-80 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    // Global shared friend list
+    let friends = ['นนท์', 'มินต์', 'บอล', 'ก้อย'];
+
+    // Multi-bill data model
+    let bills = [
+      {
+        id: 'b1',
+        name: 'ร้านที่ 1 (ชาบู/อาหารหลัก)',
+        payer: 'นนท์',
+        promptpayId: '0812345678',
+        accountNote: '',
+        qrMode: 'auto', // 'auto' | 'upload'
+        customQrUrl: null,
+        hasSC: true,
+        hasVAT: true,
+        discountType: 'baht',
+        discountVal: 0,
+        dishes: [
+          { id: 'd1_1', name: 'ปลากะพงทอดน้ำปลา', price: 420, members: ['นนท์', 'มินต์', 'บอล', 'ก้อย'] },
+          { id: 'd1_2', name: 'ต้มยำกุ้งหม้อไฟ', price: 320, members: ['นนท์', 'มินต์', 'บอล'] },
+          { id: 'd1_3', name: 'ยำวุ้นเส้นทะเล', price: 180, members: ['มินต์', 'ก้อย'] },
+          { id: 'd1_4', name: 'ข้าวสวย 4 จาน', price: 80, members: ['นนท์', 'มินต์', 'บอล', 'ก้อย'] }
+        ]
+      },
+      {
+        id: 'b2',
+        name: 'ร้านที่ 2 (คาเฟ่/ของหวาน)',
+        payer: 'มินต์',
+        promptpayId: '0898765432',
+        accountNote: '',
+        qrMode: 'auto',
+        customQrUrl: null,
+        hasSC: false,
+        hasVAT: true,
+        discountType: 'percent',
+        discountVal: 10,
+        dishes: [
+          { id: 'd2_1', name: 'บิงซูสตรอว์เบอร์รี', price: 240, members: ['นนท์', 'มินต์', 'บอล', 'ก้อย'] },
+          { id: 'd2_2', name: 'มัทฉะลาเต้เย็น (2 แก้ว)', price: 170, members: ['มินต์', 'ก้อย'] },
+          { id: 'd2_3', name: 'อเมริกาโน่เย็น', price: 80, members: ['บอล'] }
+        ]
+      }
+    ];
+
+    let activeBillId = 'b1';
+    let resultView = 'all'; // 'all' | 'current'
+    let calculatedGrandData = null;
+    let qrInstance = null;
+
+    window.onload = function() {
+      renderFriendsBadgeList();
+      renderBillTabs();
+      loadActiveBillForm();
+      calculateSummary();
+    };
+
+    function getActiveBill() {
+      return bills.find(b => b.id === activeBillId) || bills[0];
+    }
+
+    function renderBillTabs() {
+      const container = document.getElementById('billTabsContainer');
+      document.getElementById('totalBillsCount').innerText = bills.length;
+      document.getElementById('mobileBillsCount').innerText = bills.length;
+
+      container.innerHTML = bills.map((bill, index) => {
+        const isActive = bill.id === activeBillId;
+        const activeClass = isActive 
+          ? 'bg-blue-600 text-white shadow-md border-blue-600' 
+          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200';
+        
+        return `
+          <button type="button" onclick="switchActiveBill('${bill.id}')" 
+                  class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition whitespace-nowrap flex items-center gap-1.5 ${activeClass}">
+            <span>${index + 1}.</span>
+            <span class="max-w-[130px] truncate">${escapeHtml(bill.name)}</span>
+            <span class="text-[11px] opacity-80 font-normal">(${escapeHtml(bill.payer || 'ไม่มีคนจ่าย')})</span>
+          </button>
+        `;
+      }).join('');
+
+      // Disable delete button if only 1 bill exists
+      const deleteBtn = document.getElementById('btnDeleteCurrentBill');
+      if (bills.length <= 1) {
+        deleteBtn.classList.add('opacity-40', 'cursor-not-allowed');
+        deleteBtn.disabled = true;
+      } else {
+        deleteBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+        deleteBtn.disabled = false;
+      }
+    }
+
+    function switchActiveBill(billId) {
+      activeBillId = billId;
+      renderBillTabs();
+      loadActiveBillForm();
+      if (!document.getElementById('resultSection').classList.contains('hidden')) {
+        calculateSummary();
+      }
+    }
+
+    function addNewBill() {
+      const newIndex = bills.length + 1;
+      const defaultPayer = friends.length > 0 ? friends[(newIndex - 1) % friends.length] : 'ผู้สำรองจ่าย';
+      const newBill = {
+        id: 'b_' + Date.now(),
+        name: `ร้านที่ ${newIndex} (ร้านใหม่)`,
+        payer: defaultPayer,
+        promptpayId: '',
+        accountNote: '',
+        qrMode: 'auto',
+        customQrUrl: null,
+        hasSC: false,
+        hasVAT: false,
+        discountType: 'baht',
+        discountVal: 0,
+        dishes: []
+      };
+      bills.push(newBill);
+      activeBillId = newBill.id;
+      renderBillTabs();
+      loadActiveBillForm();
+      calculateSummary();
+      showToast(`เพิ่ม "${newBill.name}" เรียบร้อยแล้ว`, 'success');
+    }
+
+    function deleteCurrentBill() {
+      if (bills.length <= 1) {
+        showToast('ต้องมีร้านค้าอย่างน้อย 1 ร้าน', 'warning');
+        return;
+      }
+      const bill = getActiveBill();
+      bills = bills.filter(b => b.id !== activeBillId);
+      activeBillId = bills[0].id;
+      renderBillTabs();
+      loadActiveBillForm();
+      calculateSummary();
+      showToast(`ลบร้าน "${bill.name}" เรียบร้อย`, 'info');
+    }
+
+    function updateCurrentBillName(newName) {
+      const bill = getActiveBill();
+      bill.name = newName || `ร้านที่ 1`;
+      document.getElementById('activeBillTitleHighlight').innerText = bill.name;
+      renderBillTabs();
+    }
+
+    function loadActiveBillForm() {
+      const bill = getActiveBill();
+      document.getElementById('currentBillNameInput').value = bill.name;
+      document.getElementById('activeBillTitleHighlight').innerText = bill.name;
+      document.getElementById('receiverNameInput').value = bill.payer || '';
+      document.getElementById('receiverNameUploadInput').value = bill.payer || '';
+      document.getElementById('promptpayIdInput').value = bill.promptpayId || '';
+      document.getElementById('accountNoteInput').value = bill.accountNote || '';
+      document.getElementById('scCheck').checked = !!bill.hasSC;
+      document.getElementById('vatCheck').checked = !!bill.hasVAT;
+      document.getElementById('discountInput').value = bill.discountVal || '';
+
+      setDiscountType(bill.discountType || 'baht', false);
+      switchQrInputMode(bill.qrMode || 'auto', false);
+
+      if (bill.customQrUrl) {
+        document.getElementById('customQrPreviewImg').src = bill.customQrUrl;
+        document.getElementById('uploadPlaceholder').classList.add('hidden');
+        document.getElementById('uploadPreviewContainer').classList.remove('hidden');
+      } else {
+        document.getElementById('customQrPreviewImg').src = '';
+        document.getElementById('uploadPreviewContainer').classList.add('hidden');
+        document.getElementById('uploadPlaceholder').classList.remove('hidden');
+      }
+
+      renderPayerQuickSelectBadges();
+      renderDishMemberCheckboxes();
+      renderDishes();
+    }
+
+    function renderPayerQuickSelectBadges() {
+      const container = document.getElementById('payerQuickSelectBadges');
+      const bill = getActiveBill();
+      if (friends.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400 italic">กรุณาเพิ่มเพื่อนในข้อ 2</span>';
+        return;
+      }
+      container.innerHTML = friends.map(f => {
+        const isSelected = bill.payer === f;
+        const btnClass = isSelected 
+          ? 'bg-blue-600 text-white font-bold shadow-xs' 
+          : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200';
+        return `
+          <button type="button" onclick="selectPayer('${escapeHtml(f)}')" 
+                  class="px-2.5 py-1 rounded-lg text-xs transition flex items-center gap-1 ${btnClass}">
+            ${isSelected ? '✓ ' : ''}${escapeHtml(f)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectPayer(name) {
+      const bill = getActiveBill();
+      bill.payer = name;
+      document.getElementById('receiverNameInput').value = name;
+      document.getElementById('receiverNameUploadInput').value = name;
+      renderPayerQuickSelectBadges();
+      renderBillTabs();
+      triggerAutoRecalculate();
+      showToast(`ตั้ง "${name}" เป็นคนสำรองจ่ายร้านนี้แล้ว`, 'info');
+    }
+
+    function updateCurrentBillPayer(name) {
+      const bill = getActiveBill();
+      bill.payer = name;
+      renderPayerQuickSelectBadges();
+      renderBillTabs();
+    }
+
+    function updateCurrentBillPromptPay(id) {
+      const bill = getActiveBill();
+      bill.promptpayId = id;
+    }
+
+    function updateCurrentBillAccountNote(note) {
+      const bill = getActiveBill();
+      bill.accountNote = note;
+    }
+
+    function switchQrInputMode(mode, save = true) {
+      const bill = getActiveBill();
+      if (save) bill.qrMode = mode;
+
+      const tabAuto = document.getElementById('tabModeAuto');
+      const tabUpload = document.getElementById('tabModeUpload');
+      const sectionAuto = document.getElementById('sectionAutoQr');
+      const sectionUpload = document.getElementById('sectionUploadQr');
+
+      if (mode === 'upload') {
+        tabUpload.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5';
+        tabAuto.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5';
+        sectionAuto.classList.add('hidden');
+        sectionUpload.classList.remove('hidden');
+      } else {
+        tabAuto.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-blue-700 shadow-xs flex items-center justify-center gap-1.5';
+        tabUpload.className = 'flex-1 py-2 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5';
+        sectionUpload.classList.add('hidden');
+        sectionAuto.classList.remove('hidden');
+      }
+    }
+
+    function handleQrFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'warning');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const bill = getActiveBill();
+        bill.customQrUrl = e.target.result;
+        document.getElementById('customQrPreviewImg').src = bill.customQrUrl;
+        document.getElementById('uploadPlaceholder').classList.add('hidden');
+        document.getElementById('uploadPreviewContainer').classList.remove('hidden');
+        showToast('อัปโหลดรูป QR สำหรับร้านนี้แล้ว', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeUploadedQrImage() {
+      const bill = getActiveBill();
+      bill.customQrUrl = null;
+      document.getElementById('qrImageFileInput').value = '';
+      document.getElementById('customQrPreviewImg').src = '';
+      document.getElementById('uploadPreviewContainer').classList.add('hidden');
+      document.getElementById('uploadPlaceholder').classList.remove('hidden');
+      showToast('ลบรูปภาพ QR Code เรียบร้อย', 'info');
+    }
+
+    function addFriend() {
+      const input = document.getElementById('friendNameInput');
+      const name = input.value.trim();
+      if (!name) {
+        showToast('กรุณาพิมพ์ชื่อเพื่อนก่อน', 'warning');
+        return;
+      }
+      if (friends.includes(name)) {
+        showToast(`มีชื่อ "${name}" อยู่แล้ว`, 'warning');
+        return;
+      }
+      friends.push(name);
+      input.value = '';
+      renderFriendsBadgeList();
+      renderDishMemberCheckboxes();
+      renderPayerQuickSelectBadges();
+      showToast(`เพิ่ม "${name}" เรียบร้อย`, 'success');
+    }
+
+    function removeFriend(name) {
+      if (friends.length <= 1) {
+        showToast('ต้องมีเพื่อนร่วมโต๊ะอย่างน้อย 1 คน', 'warning');
+        return;
+      }
+      friends = friends.filter(f => f !== name);
+      bills.forEach(b => {
+        if (b.payer === name) {
+          b.payer = friends[0] || 'ผู้สำรองจ่าย';
+        }
+        b.dishes.forEach(d => {
+          d.members = d.members.filter(m => m !== name);
+        });
+      });
+      renderFriendsBadgeList();
+      renderDishMemberCheckboxes();
+      renderPayerQuickSelectBadges();
+      renderDishes();
+      renderBillTabs();
+      calculateSummary();
+      showToast(`ลบ "${name}" ออกแล้ว`, 'info');
+    }
+
+    function renderFriendsBadgeList() {
+      const container = document.getElementById('friendsBadgeList');
+      document.getElementById('friendCountBadge').innerText = friends.length;
+      if (friends.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400 italic">ยังไม่มีรายชื่อเพื่อน</span>';
+        return;
+      }
+      container.innerHTML = friends.map(f => `
+        <span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-800">
+          <span>${escapeHtml(f)}</span>
+          <button type="button" onclick="removeFriend('${escapeHtml(f)}')" class="w-4 h-4 rounded-full flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 text-xs font-bold transition">&times;</button>
+        </span>
+      `).join('');
+    }
+
+    function renderDishMemberCheckboxes() {
+      const container = document.getElementById('dishMembersCheckboxes');
+      if (friends.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400 italic">กรุณาเพิ่มเพื่อนในข้อ 2 ก่อน</span>';
+        return;
+      }
+      container.innerHTML = friends.map(f => `
+        <label class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-blue-50/50 hover:border-blue-300 transition">
+          <input type="checkbox" value="${escapeHtml(f)}" checked class="dish-member-cb rounded text-blue-600 w-4 h-4">
+          <span class="text-xs font-medium text-slate-700">${escapeHtml(f)}</span>
+        </label>
+      `).join('');
+    }
+
+    function toggleAllDishMembers(checked) {
+      document.querySelectorAll('.dish-member-cb').forEach(cb => cb.checked = checked);
+    }
+
+    function addDish() {
+      const bill = getActiveBill();
+      const nameInput = document.getElementById('dishNameInput');
+      const priceInput = document.getElementById('dishPriceInput');
+      const name = nameInput.value.trim();
+      const price = parseFloat(priceInput.value);
+
+      const checkboxes = document.querySelectorAll('.dish-member-cb:checked');
+      const selectedMembers = Array.from(checkboxes).map(cb => cb.value);
+
+      if (!name) {
+        showToast('กรุณากรอกชื่อเมนูอาหาร', 'warning');
+        return;
+      }
+      if (isNaN(price) || price <= 0) {
+        showToast('กรุณากรอกราคาที่มากกว่า 0', 'warning');
+        return;
+      }
+      if (selectedMembers.length === 0) {
+        showToast('กรุณาเลือกอย่างน้อย 1 คนที่กินเมนูนี้', 'warning');
+        return;
+      }
+
+      bill.dishes.push({
+        id: 'd_' + Date.now(),
+        name,
+        price,
+        members: selectedMembers
+      });
+
+      nameInput.value = '';
+      priceInput.value = '';
+      toggleAllDishMembers(true);
+      renderDishes();
+      calculateSummary();
+      showToast(`เพิ่ม "${name}" ลงใน ${bill.name} แล้ว`, 'success');
+    }
+
+    function removeDish(dishId) {
+      const bill = getActiveBill();
+      bill.dishes = bill.dishes.filter(d => d.id !== dishId);
+      renderDishes();
+      calculateSummary();
+      showToast('ลบรายการอาหารแล้ว', 'info');
+    }
+
+    function renderDishes() {
+      const bill = getActiveBill();
+      const tbody = document.getElementById('dishesTableBody');
+      const mobileList = document.getElementById('dishesMobileList');
+      const countBadge = document.getElementById('dishCountBadge');
+      const subtotalRawText = document.getElementById('subtotalRawText');
+
+      countBadge.innerText = bill.dishes.length;
+      const rawTotal = bill.dishes.reduce((acc, d) => acc + d.price, 0);
+      subtotalRawText.innerText = rawTotal.toFixed(2);
+
+      if (bill.dishes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400 text-xs">ยังไม่มีรายการอาหารในร้านนี้</td></tr>';
+        mobileList.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs bg-slate-50 rounded-xl border border-slate-200">ยังไม่มีรายการอาหารในร้านนี้</div>';
+        return;
+      }
+
+      tbody.innerHTML = bill.dishes.map(d => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 font-semibold text-slate-800">${escapeHtml(d.name)}</td>
+          <td class="p-3 text-right font-mono font-medium text-slate-700">${d.price.toFixed(2)} บ.</td>
+          <td class="p-3">
+            <div class="flex flex-wrap gap-1">
+              ${d.members.map(m => `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[11px]">${escapeHtml(m)}</span>`).join('')}
+            </div>
+          </td>
+          <td class="p-3 text-center">
+            <button type="button" onclick="removeDish('${d.id}')" class="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      mobileList.innerHTML = bill.dishes.map(d => `
+        <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="font-bold text-slate-800 text-sm">${escapeHtml(d.name)}</span>
+              <span class="block text-emerald-600 font-mono font-bold text-sm">${d.price.toFixed(2)} บาท</span>
+            </div>
+            <button type="button" onclick="removeDish('${d.id}')" class="text-slate-400 hover:text-red-500 p-1 text-xs">ลบ</button>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[11px] text-slate-500 border-t border-slate-100 pt-1.5">
+            <span class="text-slate-400">คนแชร์:</span>
+            ${d.members.map(m => `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded">${escapeHtml(m)}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function setDiscountType(type, trigger = true) {
+      const bill = getActiveBill();
+      bill.discountType = type;
+      const btnBaht = document.getElementById('btnDiscBaht');
+      const btnPercent = document.getElementById('btnDiscPercent');
+      const unitLabel = document.getElementById('discountUnitLabel');
+      const input = document.getElementById('discountInput');
+
+      if (type === 'percent') {
+        btnPercent.className = 'px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-xs transition';
+        btnBaht.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+        unitLabel.innerText = '%';
+        input.placeholder = 'เช่น 10 หรือ 15';
+      } else {
+        btnBaht.className = 'px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-xs transition';
+        btnPercent.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+        unitLabel.innerText = 'บาท';
+        input.placeholder = 'เช่น 100 หรือ 50';
+      }
+      if (trigger) triggerAutoRecalculate();
+    }
+
+    function onBillTaxDiscountChanged() {
+      const bill = getActiveBill();
+      bill.hasSC = document.getElementById('scCheck').checked;
+      bill.hasVAT = document.getElementById('vatCheck').checked;
+      bill.discountVal = parseFloat(document.getElementById('discountInput').value) || 0;
+      triggerAutoRecalculate();
+    }
+
+    function triggerAutoRecalculate() {
+      calculateSummary();
+    }
+
+    function calculateBillData(bill) {
+      const rawSubtotal = bill.dishes.reduce((sum, d) => sum + d.price, 0);
+      let discountVal = 0;
+
+      if (bill.discountType === 'percent') {
+        const pct = Math.max(0, Math.min(100, bill.discountVal || 0));
+        discountVal = (rawSubtotal * pct) / 100;
+      } else {
+        discountVal = Math.min(rawSubtotal, Math.max(0, bill.discountVal || 0));
+      }
+
+      const subtotalAfterDiscount = Math.max(0, rawSubtotal - discountVal);
+      const scAmount = bill.hasSC ? subtotalAfterDiscount * 0.10 : 0;
+      const vatAmount = bill.hasVAT ? (subtotalAfterDiscount + scAmount) * 0.07 : 0;
+      const grandTotal = subtotalAfterDiscount + scAmount + vatAmount;
+
+      const memberShares = {};
+      friends.forEach(f => memberShares[f] = 0);
+
+      bill.dishes.forEach(d => {
+        if (d.members.length > 0) {
+          const split = d.price / d.members.length;
+          d.members.forEach(m => {
+            if (memberShares[m] !== undefined) {
+              memberShares[m] += split;
+            }
+          });
+        }
+      });
+
+      const memberFinals = {};
+      friends.forEach(f => {
+        const rawShare = memberShares[f];
+        const ratio = rawSubtotal > 0 ? (rawShare / rawSubtotal) : 0;
+        const myDiscount = discountVal * ratio;
+        const myAfterDisc = Math.max(0, rawShare - myDiscount);
+        const mySC = bill.hasSC ? (myAfterDisc * 0.10) : 0;
+        const myVAT = bill.hasVAT ? ((myAfterDisc + mySC) * 0.07) : 0;
+        const myFinal = myAfterDisc + mySC + myVAT;
+
+        memberFinals[f] = {
+          raw: rawShare,
+          discount: myDiscount,
+          sc: mySC,
+          vat: myVAT,
+          finalAmount: myFinal
+        };
+      });
+
+      return {
+        rawSubtotal,
+        discountVal,
+        scAmount,
+        vatAmount,
+        grandTotal,
+        memberFinals
+      };
+    }
+
+    function calculateSummary() {
+      if (friends.length === 0) {
+        document.getElementById('resultSection').classList.add('hidden');
+        return;
+      }
+
+      let grandTotalAllBills = 0;
+      const memberGrandTotals = {};
+      const memberPaidTotals = {}; // how much each friend paid out of pocket
+      friends.forEach(f => {
+        memberGrandTotals[f] = 0;
+        memberPaidTotals[f] = 0;
+      });
+
+      const billCalculatedList = bills.map(bill => {
+        const calc = calculateBillData(bill);
+        grandTotalAllBills += calc.grandTotal;
+
+        // Add to payer's credit
+        if (bill.payer && memberPaidTotals[bill.payer] !== undefined) {
+          memberPaidTotals[bill.payer] += calc.grandTotal;
+        }
+
+        // Add to each member's debt
+        Object.entries(calc.memberFinals).forEach(([name, data]) => {
+          if (memberGrandTotals[name] !== undefined) {
+            memberGrandTotals[name] += data.finalAmount;
+          }
+        });
+
+        return { bill, calc };
+      });
+
+      // Compute Net Balances: (Paid - Owed). Positive = receiver, Negative = debtor
+      const netBalances = {};
+      friends.forEach(f => {
+        netBalances[f] = (memberPaidTotals[f] || 0) - (memberGrandTotals[f] || 0);
+      });
+
+      // Calculate simplified smart transfers
+      const settlements = computeSettlements(netBalances);
+
+      calculatedGrandData = {
+        grandTotalAllBills,
+        billCalculatedList,
+        memberGrandTotals,
+        memberPaidTotals,
+        netBalances,
+        settlements
+      };
+
+      // Update Top Summary UI
+      document.getElementById('grandTotalDisplay').innerHTML = `${grandTotalAllBills.toFixed(2)} <span class="text-lg font-normal text-white">บาท</span>`;
+      document.getElementById('mobileBarTotal').innerText = grandTotalAllBills.toFixed(2) + ' บาท';
+
+      const activeBillData = billCalculatedList.find(b => b.bill.id === activeBillId);
+      if (activeBillData) {
+        document.getElementById('currentBillTotalMini').innerText = activeBillData.calc.grandTotal.toFixed(2);
+      }
+
+      // Render breakdown pills
+      const pillsContainer = document.getElementById('shopsBreakdownPills');
+      pillsContainer.innerHTML = billCalculatedList.map(({ bill, calc }) => `
+        <span class="px-2.5 py-1 rounded-lg bg-white/10 text-slate-200 border border-white/10 flex items-center gap-1">
+          <b>${escapeHtml(bill.name)}:</b> ${calc.grandTotal.toFixed(2)} บ. 
+          <span class="text-[11px] text-emerald-300">(${escapeHtml(bill.payer || 'ไม่มีคนจ่าย')})</span>
+        </span>
+      `).join('');
+
+      renderMemberGrandCards();
+      renderSettlementTransfers();
+      renderCurrentBillResult();
+      document.getElementById('resultSection').classList.remove('hidden');
+    }
+
+    // Smart Debt Resolution Algorithm (Minimizes transfer count)
+    function computeSettlements(balances) {
+      const debtors = [];
+      const creditors = [];
+
+      Object.entries(balances).forEach(([name, amount]) => {
+        const rounded = Math.round(amount * 100) / 100;
+        if (rounded < -0.05) {
+          debtors.push({ name, amount: -rounded });
+        } else if (rounded > 0.05) {
+          creditors.push({ name, amount: rounded });
+        }
+      });
+
+      const transfers = [];
+      let i = 0;
+      let j = 0;
+
+      while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+        const settleAmount = Math.min(debtor.amount, creditor.amount);
+
+        if (settleAmount > 0.05) {
+          // Find creditor's bill PromptPay info
+          const creditorBill = bills.find(b => b.payer === creditor.name) || bills[0];
+          transfers.push({
+            from: debtor.name,
+            to: creditor.name,
+            amount: settleAmount,
+            billRef: creditorBill
+          });
+        }
+
+        debtor.amount -= settleAmount;
+        creditor.amount -= settleAmount;
+
+        if (debtor.amount <= 0.05) i++;
+        if (creditor.amount <= 0.05) j++;
+      }
+
+      return transfers;
+    }
+
+    function renderMemberGrandCards() {
+      const container = document.getElementById('memberGrandCardsGrid');
+      if (!calculatedGrandData) return;
+
+      container.innerHTML = Object.entries(calculatedGrandData.memberGrandTotals).map(([name, totalOwed]) => {
+        const paid = calculatedGrandData.memberPaidTotals[name] || 0;
+        const net = calculatedGrandData.netBalances[name] || 0;
+
+        let statusBadge = '';
+        if (net > 0.05) {
+          statusBadge = `<span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg">รับคืน +${net.toFixed(2)} บ.</span>`;
+        } else if (net < -0.05) {
+          statusBadge = `<span class="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg">ต้องโอน ${Math.abs(net).toFixed(2)} บ.</span>`;
+        } else {
+          statusBadge = `<span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">ยอดพอดี (0.00 บ.)</span>`;
+        }
+
+        return `
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2.5">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs text-slate-400 font-medium">สมาชิก</span>
+                <h4 class="text-base font-bold text-slate-900">${escapeHtml(name)}</h4>
+              </div>
+              <div class="text-right">
+                ${statusBadge}
+              </div>
+            </div>
+
+            <div class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl space-y-1">
+              <div class="flex justify-between">
+                <span>ยอดที่กินรวมทุกร้าน:</span>
+                <b class="font-mono text-slate-900">${totalOwed.toFixed(2)} บ.</b>
+              </div>
+              <div class="flex justify-between text-slate-500">
+                <span>ยอดที่ออกเงินไปก่อน:</span>
+                <span class="font-mono">${paid.toFixed(2)} บ.</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSettlementTransfers() {
+      const container = document.getElementById('settlementTransfersList');
+      if (!calculatedGrandData || calculatedGrandData.settlements.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-2">ไม่มีรายการที่ต้องโอนเงิน (ยอดหักล้างกันพอดี)</p>';
+        return;
+      }
+
+      container.innerHTML = calculatedGrandData.settlements.map((t, idx) => `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">${idx + 1}</span>
+            <div class="text-xs">
+              <span class="font-bold text-slate-900">${escapeHtml(t.from)}</span>
+              <span class="text-slate-400 mx-1">โอนให้</span>
+              <span class="font-bold text-emerald-700">${escapeHtml(t.to)}</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between sm:justify-end gap-3 pt-1 sm:pt-0">
+            <span class="text-sm font-black text-blue-700 font-mono">${t.amount.toFixed(2)} บ.</span>
+            <button type="button" onclick="openQrForSettlement('${escapeHtml(t.to)}', ${t.amount})" 
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-xs transition flex items-center gap-1 active:scale-95">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+              <span>ดู QR โอน</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderCurrentBillResult() {
+      const activeObj = calculatedGrandData?.billCalculatedList.find(b => b.bill.id === activeBillId);
+      if (!activeObj) return;
+
+      const bill = activeObj.bill;
+      const calc = activeObj.calc;
+
+      document.getElementById('currentBillResultTitle').innerText = bill.name;
+      document.getElementById('currentBillResultPayerTag').innerText = `คนสำรองจ่าย: ${bill.payer || 'ไม่มี'}`;
+
+      const container = document.getElementById('memberCurrentBillCardsGrid');
+      container.innerHTML = Object.entries(calc.memberFinals).map(([name, data]) => `
+        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2.5">
+          <div class="flex justify-between items-start">
+            <h4 class="text-base font-bold text-slate-900">${escapeHtml(name)}</h4>
+            <span class="text-lg font-black text-blue-700 font-mono">${data.finalAmount.toFixed(2)} บ.</span>
+          </div>
+          <div class="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl flex justify-between">
+            <span>ค่าอาหาร: ${data.raw.toFixed(2)} บ.</span>
+            <span>ลด: ${data.discount.toFixed(2)} บ.</span>
+            <span>SC+VAT: ${(data.sc + data.vat).toFixed(2)} บ.</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function switchResultView(view) {
+      resultView = view;
+      const btnAll = document.getElementById('btnViewAllBills');
+      const btnCurrent = document.getElementById('btnViewCurrentBill');
+      const viewAll = document.getElementById('viewAllBillsSection');
+      const viewCurrent = document.getElementById('viewCurrentBillSection');
+
+      if (view === 'current') {
+        btnCurrent.className = 'px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-xs transition';
+        btnAll.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        viewAll.classList.add('hidden');
+        viewCurrent.classList.remove('hidden');
+        renderCurrentBillResult();
+      } else {
+        btnAll.className = 'px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-xs transition';
+        btnCurrent.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        viewCurrent.classList.add('hidden');
+        viewAll.classList.remove('hidden');
+      }
+    }
+
+    function openQrForSettlement(payerName, amount) {
+      // Find the payer's bill or PromptPay configuration
+      const payerBill = bills.find(b => b.payer === payerName && (b.promptpayId || b.customQrUrl)) || bills.find(b => b.payer === payerName) || getActiveBill();
+      openModalWithDetails(payerName, payerBill.promptpayId || '', payerBill.accountNote || '', payerBill.customQrUrl, payerBill.qrMode, amount);
+    }
+
+    function openModalWithDetails(receiverName, ppTarget, accountNote, customQrUrl, mode, amount) {
+      const qrTargetEl = document.getElementById('qrCodeTarget');
+      const customImgEl = document.getElementById('customQrModalImg');
+      const subtitleEl = document.getElementById('modalQrSubtitle');
+      const noticeTextEl = document.getElementById('modalNoticeText');
+
+      document.getElementById('modalReceiverName').innerText = receiverName || 'ผู้สำรองจ่าย';
+      document.getElementById('modalPayAmount').innerText = amount.toFixed(2) + ' บาท';
+
+      if (mode === 'upload' && customQrUrl) {
+        document.getElementById('modalPromptPayId').innerText = accountNote || 'พร้อมเพย์ส่วนตัว';
+        subtitleEl.innerText = `สแกน QR Code ของ ${receiverName}`;
+        noticeTextEl.innerText = 'สแกนรูป QR แล้วระบุยอดเงินตามที่แสดงด้านบน';
+        qrTargetEl.classList.add('hidden');
+        customImgEl.src = customQrUrl;
+        customImgEl.classList.remove('hidden');
+        document.getElementById('qrModal').classList.remove('hidden');
+        return;
+      }
+
+      if (!ppTarget) {
+        showToast(`ยังไม่ได้ใส่เลขพร้อมเพย์ของ "${receiverName}" กรุณากรอกในข้อ 1`, 'warning');
+        return;
+      }
+
+      const payload = generatePromptPayPayload(ppTarget, amount);
+      if (!payload) {
+        showToast('เลขพร้อมเพย์ไม่ถูกต้อง (ต้องเป็นเบอร์ 10 หลัก หรือบัตร ปชช. 13 หลัก)', 'warning');
+        return;
+      }
+
+      document.getElementById('modalPromptPayId').innerText = ppTarget;
+      subtitleEl.innerText = 'พร้อมเพย์ สแกนจ่ายด้วยทุกแอปธนาคาร';
+      noticeTextEl.innerText = 'สแกนด้วยแอปธนาคารบนมือถือ ยอดเงินจะขึ้นให้อัตโนมัติ';
+
+      customImgEl.classList.add('hidden');
+      qrTargetEl.classList.remove('hidden');
+      qrTargetEl.innerHTML = '';
+
+      try {
+        qrInstance = new QRCode(qrTargetEl, {
+          text: payload,
+          width: 190,
+          height: 190,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        showToast('ไม่สามารถสร้าง QR Code ได้', 'warning');
+        return;
+      }
+
+      document.getElementById('qrModal').classList.remove('hidden');
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    function copyModalAmount() {
+      const amountText = document.getElementById('modalPayAmount').innerText.replace(' บาท', '').trim();
+      copyToClipboard(amountText);
+      showToast('คัดลอกยอดเงิน ' + amountText + ' บาทแล้ว', 'success');
+    }
+
+    function copyLineSummary() {
+      if (!calculatedGrandData) return;
+
+      let text = `🎉 สรุปยอดหารค่าอาหาร (แยกตามร้าน)\n`;
+      text += `========================\n`;
+
+      calculatedGrandData.billCalculatedList.forEach(({ bill, calc }, idx) => {
+        text += `🏪 ร้านที่ ${idx + 1}: ${bill.name}\n`;
+        text += `• ยอดรวมร้านนี้: ${calc.grandTotal.toFixed(2)} บาท\n`;
+        text += `• คนสำรองจ่าย: ${bill.payer || '-'}`;
+        if (bill.promptpayId) text += ` (พร้อมเพย์: ${bill.promptpayId})`;
+        text += `\n------------------------\n`;
+      });
+
+      text += `\n👥 ยอดที่เพื่อนแต่ละคนกินรวมทั้งวัน:\n`;
+      Object.entries(calculatedGrandData.memberGrandTotals).forEach(([name, total]) => {
+        text += `• ${name}: ${total.toFixed(2)} บาท\n`;
+      });
+
+      if (calculatedGrandData.settlements.length > 0) {
+        text += `\n💸 สรุปการโอนเงินสุทธิ (หักลบยอดให้แล้ว):\n`;
+        calculatedGrandData.settlements.forEach((s) => {
+          text += `👉 ${s.from} โอนให้ ${s.to} = ${s.amount.toFixed(2)} บาท\n`;
+        });
+      }
+
+      text += `\n💰 ยอดรวมทั้งสิ้น: ${calculatedGrandData.grandTotalAllBills.toFixed(2)} บาท\n`;
+      text += `ขอบคุณทุกคนมากๆ ครับ/ค่ะ 🙏`;
+
+      copyToClipboard(text);
+      showToast('คัดลอกสรุปทุกร้านสำหรับส่ง LINE แล้ว!', 'success');
+    }
+
+    function generatePromptPayPayload(target, amount) {
+      let cleaned = target.replace(/[^0-9]/g, '');
+      let targetType = '';
+      let formattedTarget = '';
+
+      if (cleaned.length === 10) {
+        targetType = '01';
+        formattedTarget = '0066' + cleaned.substring(1);
+      } else if (cleaned.length === 13) {
+        targetType = '02';
+        formattedTarget = cleaned;
+      } else {
+        return null;
+      }
+
+      function tag(id, value) {
+        const len = value.length.toString().padStart(2, '0');
+        return `${id}${len}${value}`;
+      }
+
+      const aid = tag('00', 'A000000677010111');
+      const biller = tag(targetType, formattedTarget);
+      const merchantInfo = tag('29', aid + biller);
+      const amountStr = amount.toFixed(2);
+      const amountTag = tag('54', amountStr);
+
+      const raw = '000201' +
+                  '010212' +
+                  merchantInfo +
+                  '5303764' +
+                  amountTag +
+                  '5802TH' +
+                  '6304';
+
+      const crc = crc16(raw);
+      return raw + crc;
+    }
+
+    function crc16(data) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < data.length; i++) {
+        crc ^= (data.charCodeAt(i) << 8);
+        for (let j = 0; j < 8; j++) {
+          if ((crc & 0x8000) !== 0) {
+            crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+          } else {
+            crc = (crc << 1) & 0xFFFF;
+          }
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    function resetAllData() {
+      bills = [
+        {
+          id: 'b_' + Date.now(),
+          name: 'ร้านที่ 1',
+          payer: friends[0] || 'ผู้สำรองจ่าย',
+          promptpayId: '',
+          accountNote: '',
+          qrMode: 'auto',
+          customQrUrl: null,
+          hasSC: false,
+          hasVAT: false,
+          discountType: 'baht',
+          discountVal: 0,
+          dishes: []
+        }
+      ];
+      activeBillId = bills[0].id;
+      renderBillTabs();
+      loadActiveBillForm();
+      calculateSummary();
+      showToast('ล้างข้อมูลบิลทั้งหมดเรียบร้อยแล้ว', 'info');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let bgColor = 'bg-slate-900 text-white';
+      if (type === 'success') bgColor = 'bg-emerald-600 text-white';
+      if (type === 'warning') bgColor = 'bg-amber-500 text-white';
+      if (type === 'info') bgColor = 'bg-blue-600 text-white';
+
+      toast.className = `p-3 sm:p-3.5 rounded-xl shadow-xl text-xs sm:text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto flex items-center justify-between gap-2 ${bgColor}`;
+      toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+      
+      container.appendChild(toast);
+      
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2600);
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+      } catch (err) {}
+      document.body.removeChild(textArea);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
